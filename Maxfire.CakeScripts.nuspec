@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<package>
+  <metadata>
+    <id>Maxfire.CakeScripts</id>
+    <version>0.0.0</version>
+    <authors>maxfire</authors>
+    <owners>maxfire</owners>
+    <description>Re-usable build scripts for Cake that can be used for numerous projects.</description>
+    <tags>Build Cake</tags>
+  </metadata>
+</package>

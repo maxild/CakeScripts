@@ -1,0 +1,7 @@
+.tools/*
+!.tools/packages.config
+
+
+artifacts/
+
+.DS_Store

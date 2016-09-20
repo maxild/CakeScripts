@@ -1,0 +1,28 @@
+init:
+  - git config --global core.autocrlf input
+
+install:
+  - choco install gitversion.portable -version 4.0.0-beta0007 -pre
+
+build_script:
+  # verify that all scripts compile
+  - ps: .\build.ps1
+  # version and pack
+  - gitVersion /output buildserver
+  - rmdir /s /q artifacts
+  - md artifacts
+  - nuget pack Maxfire.CakeScripts.nuspec -Exclude '*.md;*.yml;*.config;*.cake;*.sh;*.ps1' -Version %GitVersion_LegacySemVerPadded% -OutputDirectory .\artifacts
+
+test: off
+
+artifacts:
+- path: artifacts\*.nupkg
+  name: Packages
+
+deploy:
+- provider: NuGet
+  server: https://www.myget.org/F/maxfire/api/v2/package
+  api_key:
+    secure: EOVLFyiHRhh9Jij3/mITdSV5JH1SzT8JUbqqTIFtvOPndNeMme3mME01ws3+5nFB
+  skip_symbols: true
+  artifact: Packages
