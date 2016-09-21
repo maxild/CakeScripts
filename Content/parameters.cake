@@ -1,89 +1,84 @@
 public class BuildParameters
 {
-    // GitFlow branching naming conventions
-    const string FeatureBranchRegex = "^features?[/-]";
-    const string HotfixBranchRegex = "^hotfix(es)?[/-]";
-    const string ReleaseCandidateBranchRegex = "^releases?[/-]";
-    const string DevelopBranchRegex = "^dev(elop)?$";
-    const string MasterBranchRegex = "^master$";
-    const string SupportBranchRegex = "^support[/-]";
+    private readonly ICakeContext _context;
+
+    private BuildParameters(ICakeContext context)
+    {
+        if (context == null)
+        {
+            throw new ArgumentNullException("context");
+        }
+        _context = context;
+    }
 
     public string Target { get; private set; }
     public string Configuration { get; private set; }
 
     public bool IsLocalBuild { get; private set; }
     public bool IsRunningOnAppVeyor { get; private set; }
-
     public bool IsRunningOnUnix { get; private set; }
     public bool IsRunningOnWindows { get; private set; }
 
+    public GitContext Git { get; private set; }
+
+    public bool IsMainRepository { get; private set; } // not a fork?
     public bool IsPullRequest { get; private set; }
-    public bool IsFeatureBranch { get; private set; }
-    public bool IsHotfixBranch { get; private set; }
-    public bool IsReleaseCandidateBranch { get; private set; }
-    public bool IsDevelopBranch { get; private set; }
-    public bool IsMasterBranch { get; private set; }
-    public bool IsSupportBranch { get; private set; }
-
-    public bool IsMainRepository { get; private set; } // not a fork
-
-    public bool IsTagged { get; private set; }
+    public bool IsTagPush { get; private set; }
 
     //public bool IsPublishBuild { get; private set; }
     //public bool IsReleaseBuild { get; private set; }
 
-    public GitHubCredentials GitHub { get; private set; }
-    public NuGetCredentials MyGet { get; private set; }
-    public NuGetCredentials NuGet { get; private set; }
-    public AppVeyorCredentials AppVeyor { get; private set; }
+    // public GitHubCredentials GitHub { get; private set; }
+    // public NuGetCredentials MyGet { get; private set; }
+    // public NuGetCredentials NuGet { get; private set; }
 
-    public BuildVersion Version { get; private set; }
-    //public BuildPaths Paths { get; private set; }
+    public SecretEnvironment Secrets { get; private set; }
 
-    public void SetBuildVersion(BuildVersion version)
+    public void PrintToLog()
     {
-        Version  = version;
+        _context.Information("Target:              {0}", Target);
+        _context.Information("Configuration:       {0}", Configuration);
+        _context.Information("IsLocalBuild:        {0}", IsLocalBuild);
+        _context.Information("IsRunningOnAppVeyor: {0}", IsRunningOnAppVeyor);
+        _context.Information("IsRunningOnWindows:  {0}", IsRunningOnWindows);
+        _context.Information("IsRunningOnUnix:     {0}", IsRunningOnUnix);
+        _context.Information("IsMainRepository:    {0}", IsMainRepository);
+        _context.Information("IsPullRequest:       {0}", IsPullRequest);
+        _context.Information("IsTagPush:           {0}", IsTagPush);
+        Git.PrintToLog();
     }
-
-    // public void SetBuildPaths(BuildPaths paths)
-    // {
-    //     Paths  = paths;
-    // }
 
     public static BuildParameters GetParameters(
         ICakeContext context,
         BuildSystem buildSystem,
-        string repositoryOwner,
-        string repositoryName
+        BuildSettings buildSettings
         )
     {
-        if (context == null)
-        {
-            throw new ArgumentNullException("context");
-        }
+        // TODO: using AppVeyor is not very clever, because it only works on appveyor
+        context.Information("Branch: {0}", buildSystem.AppVeyor.Environment.Repository.Branch);
+        context.Information("IsTag: {0}", buildSystem.AppVeyor.Environment.Repository.Tag.IsTag);
+        context.Information("TagName: {0}", buildSystem.AppVeyor.Environment.Repository.Tag.Name);
+        context.Information("RepositoryName: {0}", buildSystem.AppVeyor.Environment.Repository.Name);
 
-        var target = context.Argument("target", "Default");
-        var configuration = context.Argument("configuration", "Release");
+        var gitContext = GitContext.GetGitContext(context);
 
-        return new BuildParameters {
-            Target = target,
-            Configuration = configuration,
+        return new BuildParameters(context) {
+            Target = context.Argument("target", "Default"),
+            Configuration = context.Argument("configuration", "Release"),
             IsLocalBuild = buildSystem.IsLocalBuild,
             IsRunningOnUnix = context.IsRunningOnUnix(),
             IsRunningOnWindows = context.IsRunningOnWindows(),
+            Git = gitContext,
+            IsMainRepository = StringComparer.OrdinalIgnoreCase.Equals(buildSettings.RepositoryId, gitContext.RepositoryId),
+
+            // ApVeyor stuff...
             IsRunningOnAppVeyor = buildSystem.AppVeyor.IsRunningOnAppVeyor,
-            IsPullRequest = buildSystem.AppVeyor.Environment.PullRequest.IsPullRequest,
-            IsFeatureBranch = System.Text.RegularExpressions.Regex.IsMatch(buildSystem.AppVeyor.Environment.Repository.Branch, FeatureBranchRegex, System.Text.RegularExpressions.RegexOptions.IgnoreCase),
-            IsDevelopBranch = System.Text.RegularExpressions.Regex.IsMatch(buildSystem.AppVeyor.Environment.Repository.Branch, DevelopBranchRegex, System.Text.RegularExpressions.RegexOptions.IgnoreCase),
-            IsHotfixBranch = System.Text.RegularExpressions.Regex.IsMatch(buildSystem.AppVeyor.Environment.Repository.Branch, HotfixBranchRegex, System.Text.RegularExpressions.RegexOptions.IgnoreCase),
-            IsReleaseCandidateBranch = System.Text.RegularExpressions.Regex.IsMatch(buildSystem.AppVeyor.Environment.Repository.Branch, ReleaseCandidateBranchRegex, System.Text.RegularExpressions.RegexOptions.IgnoreCase),
-            IsMasterBranch = System.Text.RegularExpressions.Regex.IsMatch(buildSystem.AppVeyor.Environment.Repository.Branch, MasterBranchRegex, System.Text.RegularExpressions.RegexOptions.IgnoreCase),
-            IsSupportBranch = System.Text.RegularExpressions.Regex.IsMatch(buildSystem.AppVeyor.Environment.Repository.Branch, SupportBranchRegex, System.Text.RegularExpressions.RegexOptions.IgnoreCase),
-            IsTagged = (
+            IsPullRequest = buildSystem.AppVeyor.Environment.PullRequest.IsPullRequest, // TODO: IsPullRequestBranch
+            IsTagPush = ( // TODO: Investigate AppVeyor in cake.core
                 buildSystem.AppVeyor.Environment.Repository.Tag.IsTag &&
                 !string.IsNullOrWhiteSpace(buildSystem.AppVeyor.Environment.Repository.Tag.Name)
             ),
-            IsMainRepository = StringComparer.OrdinalIgnoreCase.Equals(string.Concat(repositoryOwner, "/", repositoryName), buildSystem.AppVeyor.Environment.Repository.Name),
+
             // IsPublishBuild = new [] {
             //     "Create-Release-Notes"
             // }.Any(
@@ -96,10 +91,42 @@ public class BuildParameters
             // }.Any(
             //     publishTarget => StringComparer.OrdinalIgnoreCase.Equals(publishTarget, target)
             // )
-            GitHub = GetGitHubCredentials(context),
-            MyGet = GetMyGetCredentials(context),
-            NuGet = GetNuGetCredentials(context),
-            AppVeyor = GetAppVeyorCredentials(context)
+            Secrets = new SecretEnvironment(context, buildSettings.EnvironmentVariableNames),
+            // TODO
+            // GitHub = GetGitHubCredentials(context),
+            // MyGet = GetMyGetCredentials(context),
+            // NuGet = GetNuGetCredentials(context)
         };
     }
+
+    public class SecretEnvironment
+    {
+        private readonly ICakeContext _context;
+        private readonly EnvironmentVariableNames _nameProvider;
+
+        public SecretEnvironment(ICakeContext context, EnvironmentVariableNames environmentVariableNames)
+        {
+            if (context == null)
+            {
+                throw new ArgumentNullException("context");
+            }
+            if (environmentVariableNames == null)
+            {
+                throw new ArgumentNullException("environmentVariableNames");
+            }
+            _context = context;
+            _nameProvider = environmentVariableNames;
+        }
+
+        public string GithubPassword { get { return _context.EnvironmentVariable(_nameProvider.GitHubPasswordVariable); } }
+
+        public string MyGetMaxfireApiKey { get { return _context.EnvironmentVariable(_nameProvider.MyGetMaxfireApiKeyVariable); } }
+        public string MyGetMaxfireCiApiKey { get { return _context.EnvironmentVariable(_nameProvider.MyGetMaxfireCiApiKeyVariable); } }
+
+        public string MyGetBrfApiKey { get { return _context.EnvironmentVariable(_nameProvider.MyGetBrfApiKeyVariable); } }
+        public string MyGetBrfCiApiKey { get { return _context.EnvironmentVariable(_nameProvider.MyGetBrfCiApiKeyVariable); } }
+
+        public string NuGetApiKey { get { return _context.EnvironmentVariable(_nameProvider.NuGetApiKeyVariable); } }
+    }
+
 }

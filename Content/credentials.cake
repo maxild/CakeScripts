@@ -22,16 +22,6 @@ public class NuGetCredentials
     }
 }
 
-public class AppVeyorCredentials
-{
-    public string ApiToken { get; private set; }
-
-    public AppVeyorCredentials(string apiToken)
-    {
-        ApiToken = apiToken;
-    }
-}
-
 public static GitHubCredentials GetGitHubCredentials(ICakeContext context)
 {
     return new GitHubCredentials(
@@ -51,10 +41,4 @@ public static NuGetCredentials GetNuGetCredentials(ICakeContext context)
     return new NuGetCredentials(
         context.EnvironmentVariable(nuGetApiKeyVariable),
         context.EnvironmentVariable(nuGetSourceUrlVariable));
-}
-
-public static AppVeyorCredentials GetAppVeyorCredentials(ICakeContext context)
-{
-    return new AppVeyorCredentials(
-        context.EnvironmentVariable(appVeyorApiTokenVariable));
 }
