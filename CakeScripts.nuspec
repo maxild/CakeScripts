@@ -10,6 +10,6 @@
   </metadata>
   <files>
     <!-- target can be either 'content' or 'tools' ('lib' does not make sense) -->
-    <file src="Content\**\*.*" target="content" />
+    <file src="src\*.cake" target="content" />
   </files>
 </package>

@@ -1,12 +1,12 @@
 // Load all scripts to check compilation
-//#load "content/gitreleasemanager.cake"
-#load "content/utils.cake"
-#load "content/gitversioninfo.cake"
-#load "content/gitrepoinfo.cake"
-#load "content/parameters.cake"
-#load "content/settings.cake"
-#load "content/environment.cake"
-#load "content/paths.cake"
+//#load "src/gitreleasemanager.cake"
+#load "src/utils.cake"
+#load "src/gitversioninfo.cake"
+#load "src/gitrepoinfo.cake"
+#load "src/parameters.cake"
+#load "src/settings.cake"
+#load "src/environment.cake"
+#load "src/paths.cake"
 
 ///////////////////////////////////////////////////////////////////////////////
 // GLOBAL VARIABLES
