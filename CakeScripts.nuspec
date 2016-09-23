@@ -8,4 +8,8 @@
     <description>Re-usable build scripts for Cake that can be used for numerous projects.</description>
     <tags>Build Cake</tags>
   </metadata>
+  <files>
+    <!-- target can be either 'content' or 'tools' ('lib' does not make sense) -->
+    <file src="Content\**\*.*" target="content" />
+  </files>
 </package>

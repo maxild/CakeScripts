@@ -52,15 +52,10 @@ public class BuildParameters
         VersionInfo.PrintToLog();
         Git.PrintToLog();
         Paths.PrintToLog();
-        if (_settings.PrintAppVeyorEnvironmentVariables)
-        {
-            PrintAppVeyorEnvironmentVariables();
-        }
     }
 
     public void PrintAppVeyorEnvironmentVariables()
     {
-        // TODO: Maybe verbose here???
         if (IsRunningOnAppVeyor)
         {
             _context.Information("CI:                                    {0}", EnvironmentVariable("CI"));

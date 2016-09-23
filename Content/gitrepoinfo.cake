@@ -113,7 +113,7 @@ public class GitRepoInfo
         else
         {
             repoOwner = remoteUrlSegments[1].TrimEnd('/');
-            repoName = TrimEnd(remoteUrlSegments[2], ".git");
+            repoName = StringUtils.TrimEnd(remoteUrlSegments[2], ".git");
         }
 
         return new GitRepoInfo(context)
@@ -132,15 +132,6 @@ public class GitRepoInfo
             RepositoryOwner = repoOwner,
             RepositoryName = repoName
         };
-    }
-
-    static string TrimEnd(string s, string suffixToRemove)
-    {
-        if (s.EndsWith(suffixToRemove))
-        {
-            return s.Substring(0, s.Length - suffixToRemove.Length);
-        }
-        return s;
     }
 
     public class GitExec

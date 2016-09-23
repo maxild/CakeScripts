@@ -102,6 +102,9 @@ public class GitVersionInfo
             infoVer = string.Concat(semVer, "+GitVersion.Was.Not.Called");
         }
 
+        string cakeAssemblyVersion = typeof(ICakeContext).Assembly.GetName().Version.ToString();
+        string cakeVersion = StringUtils.TrimEnd(cakeAssemblyVersion, ".0");
+
         return new GitVersionInfo(context)
         {
             MajorMinorPatch = majorMinorPatch,
@@ -110,7 +113,7 @@ public class GitVersionInfo
             AssemblyFileVersion = string.Concat(majorMinorPatch, ".0"),
             AssemblyInformationalVersion = infoVer,
             SemVer = semVer,
-            CakeVersion = typeof(ICakeContext).Assembly.GetName().Version.ToString()
+            CakeVersion = cakeVersion
         };
     }
 }

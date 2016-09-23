@@ -24,8 +24,6 @@ public class BuildSettings
         set { _environmentVariableNames = value; }
     }
 
-    public bool PrintAppVeyorEnvironmentVariables { get; set; }
-
     // TODO: DotNetSettings
     public bool UseSystemDotNetPath { get; set; }
     public string DotNetCliInstallScriptUrl { get; set; }
