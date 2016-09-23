@@ -1,8 +1,12 @@
+// TODO: Solution.sln
+// TODO: Mandatory fields: ProjectName, RepositoryName
+
 public class BuildSettings
 {
     // default values
     const string GITHUB_REPOSITORY_OWNER = "maxild";
 
+    // TODO: GithubSettings
     private string _repositoryOwner;
     public string RepositoryOwner
     {
@@ -11,8 +15,9 @@ public class BuildSettings
     }
 
     public string RepositoryName { get; set;}
-    public string RepositoryId { get { return string.Concat(RepositoryOwner, "/", RepositoryName); } }
+    public string Remote { get { return string.Concat(RepositoryOwner, "/", RepositoryName); } }
 
+    // TODO: EnvironmentSettings
     private EnvironmentVariableNames _environmentVariableNames;
     public EnvironmentVariableNames EnvironmentVariableNames
     {
@@ -20,10 +25,13 @@ public class BuildSettings
         set { _environmentVariableNames = value; }
     }
 
-    // TODO
+    public bool PrintAppVeyorEnvironmentVariables { get; set; }
+
+    // TODO: DotNetSettings
     public bool UseSystemDotNetPath { get; set; }
     public string DotNetCliInstallScriptUrl { get; set; }
     public string DotNetCliBranch { get; set; }
     public string DotNetCliChannel { get; set; }
     public string DotNetCliVersion { get; set; }
 }
+

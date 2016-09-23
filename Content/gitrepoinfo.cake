@@ -1,18 +1,18 @@
-// Todo move to gitversion, and extend it...
-public class GitContext
+// Must be called after GitVersionInfo.Calculate!!!!!
+public class GitRepoInfo
 {
-    // GitFlow branching naming conventions
-    const string FeatureBranchRegex = "^features?[/-]";
-    const string HotfixBranchRegex = "^hotfix(es)?[/-]";
-    const string ReleaseCandidateBranchRegex = "^releases?[/-]";
-    const string DevelopBranchRegex = "^dev(elop)?$";
-    const string MasterBranchRegex = "^master$";
-    const string SupportBranchRegex = "^support[/-]";
-
+    // GitFlow branching naming conventions and conventional PR branch naming
+    const string FeatureBranchRegex          = @"^features?[/-]";
+    const string HotfixBranchRegex           = @"^hotfix(es)?[/-]";
+    const string ReleaseCandidateBranchRegex = @"^releases?[/-]";
+    const string DevelopBranchRegex          = @"^dev(elop)?$";
+    const string MasterBranchRegex           = @"^master$";
+    const string SupportBranchRegex          = @"^support[/-]";
+    const string PullRequestBranchRegex      = @"(pull|pull\-requests|pr)[/-]";
 
     private readonly ICakeContext _context;
 
-    private GitContext(ICakeContext context)
+    private GitRepoInfo(ICakeContext context)
     {
         if (context == null)
         {
@@ -36,6 +36,7 @@ public class GitContext
     public bool IsDevelopBranch { get; private set; }
     public bool IsMasterBranch { get; private set; }
     public bool IsSupportBranch { get; private set; }
+    public bool IsPullRequestBranch { get; private set; }
 
     // git tag -l --points-at HEAD
     public string Tag { get; private set; }
@@ -45,26 +46,28 @@ public class GitContext
     // git remote get-url origin
     public string RepositoryOwner { get; private set; }
     public string RepositoryName { get; private set; }
-    public string RepositoryId { get { return string.Concat(RepositoryOwner, "/", RepositoryName); } }
+    public string Remote { get { return string.Concat(RepositoryOwner, "/", RepositoryName); } }
 
     public void PrintToLog()
     {
-        _context.Information("CommitId:            {0}", CommitId);
-        _context.Information("Sha:                 {0}", Sha);
-        _context.Information("Branch:              {0}", Branch);
-        _context.Information("IsFeatureBranch:     {0}", IsFeatureBranch);
-        _context.Information("IsHotfixBranch:      {0}", IsHotfixBranch);
-        _context.Information("IsReleaseCandidateBranch: {0}", IsReleaseCandidateBranch);
-        _context.Information("IsDevelopBranch:     {0}", IsDevelopBranch);
-        _context.Information("IsMasterBranch:      {0}", IsMasterBranch);
-        _context.Information("IsSupportBranch:     {0}", IsSupportBranch);
-        _context.Information("Tag:                 {0}", Tag);
-        _context.Information("IsTag:               {0}", IsTag);
-        _context.Information("RepositoryOwner:     {0}", RepositoryOwner);
-        _context.Information("RepositoryName:      {0}", RepositoryName);
+        _context.Information("GIT Repository Information:");
+        _context.Information("  CommitId:                 {0}", CommitId);
+        _context.Information("  Sha:                      {0}", Sha);
+        _context.Information("  Branch:                   {0}", Branch);
+        _context.Information("  IsFeatureBranch:          {0}", IsFeatureBranch);
+        _context.Information("  IsHotfixBranch:           {0}", IsHotfixBranch);
+        _context.Information("  IsReleaseCandidateBranch: {0}", IsReleaseCandidateBranch);
+        _context.Information("  IsDevelopBranch:          {0}", IsDevelopBranch);
+        _context.Information("  IsMasterBranch:           {0}", IsMasterBranch);
+        _context.Information("  IsSupportBranch:          {0}", IsSupportBranch);
+        _context.Information("  IsPullRequestBranch:      {0}", IsPullRequestBranch);
+        _context.Information("  Tag:                      {0}", Tag);
+        _context.Information("  IsTag:                    {0}", IsTag);
+        _context.Information("  RepositoryOwner:          {0}", RepositoryOwner);
+        _context.Information("  RepositoryName:           {0}", RepositoryName);
     }
 
-    public static GitContext GetGitContext(ICakeContext context)
+    public static GitRepoInfo Calculate(ICakeContext context)
     {
         // using env var PATH
         var git = new GitExec(context) ;
@@ -93,7 +96,7 @@ public class GitContext
             repoName = TrimEnd(remoteUrlSegments[2], ".git");
         }
 
-        return new GitContext(context)
+        return new GitRepoInfo(context)
         {
             Sha = git.Command("rev-parse --verify HEAD"),
             CommitId = git.Command("rev-parse --verify --short HEAD"),
@@ -104,6 +107,7 @@ public class GitContext
             IsReleaseCandidateBranch = System.Text.RegularExpressions.Regex.IsMatch(branch, ReleaseCandidateBranchRegex, System.Text.RegularExpressions.RegexOptions.IgnoreCase),
             IsMasterBranch = System.Text.RegularExpressions.Regex.IsMatch(branch, MasterBranchRegex, System.Text.RegularExpressions.RegexOptions.IgnoreCase),
             IsSupportBranch = System.Text.RegularExpressions.Regex.IsMatch(branch, SupportBranchRegex, System.Text.RegularExpressions.RegexOptions.IgnoreCase),
+            IsPullRequestBranch = System.Text.RegularExpressions.Regex.IsMatch(branch, PullRequestBranchRegex, System.Text.RegularExpressions.RegexOptions.IgnoreCase),
             Tag = tag,
             RepositoryOwner = repoOwner,
             RepositoryName = repoName
@@ -137,6 +141,7 @@ public class GitContext
 
         public string Path { get; private set; }
 
+        // TODO: Move to runhelpers.cake (where stdout capturing command is missing)
         public string Command(string arguments)
         {
             IEnumerable<string> stdout;
@@ -147,6 +152,4 @@ public class GitContext
             return exit == 0 ? string.Join(" ", stdout).Trim() : string.Empty;
         }
     }
-
-
 }

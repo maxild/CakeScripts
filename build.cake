@@ -1,12 +1,12 @@
 // Load all scripts to check compilation
-#load "content/appveyor.cake"
 //#load "content/credentials.cake"
 //#load "content/gitreleasemanager.cake"
-//#load "content/gitversion.cake"
-#load "content/gitcontext.cake"
+#load "content/gitversioninfo.cake"
+#load "content/gitrepoinfo.cake"
 #load "content/parameters.cake"
 #load "content/settings.cake"
 #load "content/environment.cake"
+#load "content/paths.cake"
 
 ///////////////////////////////////////////////////////////////////////////////
 // GLOBAL VARIABLES
@@ -20,7 +20,12 @@ var parameters = BuildParameters.GetParameters(
         EnvironmentVariableNames = new EnvironmentVariableNames
         {
             GitHubPasswordVariable = "github_password"
-        }
+        },
+        PrintAppVeyorEnvironmentVariables = true
+    },
+    new BuildPathSettings
+    {
+        NuspecDir = "."
     });
 
 ///////////////////////////////////////////////////////////////////////////////
