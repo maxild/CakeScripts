@@ -10,19 +10,34 @@ public class BuildPathSettings
     public string PackagesDir { get; set; }
     public string CommonAssemblyInfoDirectoryPath { get; set; }
     public string CommonAssemblyInfoFileName { get; set; }
+    public string SolutionDirectoryPath { get; set; }
+    public string SolutionFileName { get; set; }
 }
 
 public class BuildPaths
 {
-    public BuildPaths(ICakeContext context, BuildPathSettings settings)
+    public BuildPaths(ICakeContext context, BuildSettings settings, BuildPathSettings pathSettings, ProjectInfo projectInfo)
     {
         if (context == null)
         {
             throw new ArgumentNullException("context");
         }
-        Files = new BuildFiles(context, settings ?? new BuildPathSettings());
-        Directories = new BuildDirectories(context, settings ?? new BuildPathSettings());
-        Tools = new ToolFiles(context, settings ?? new BuildPathSettings(), Directories);
+        if (settings == null)
+        {
+            throw new ArgumentNullException("settings");
+        }
+        if (pathSettings == null)
+        {
+            throw new ArgumentNullException("pathSettings");
+        }
+        if (projectInfo == null)
+        {
+            throw new ArgumentNullException("projectInfo");
+        }
+
+        Files = new BuildFiles(context, settings, pathSettings, projectInfo);
+        Directories = new BuildDirectories(context, settings, pathSettings);
+        Tools = new ToolFiles(context, settings, pathSettings, Directories);
     }
 
     public BuildFiles Files { get; private set; }
@@ -48,17 +63,8 @@ public class ToolFiles
     public FilePath NuGet { get; private set; }
     // TODO: Git
 
-    public ToolFiles(ICakeContext  context, BuildPathSettings settings, BuildDirectories dirs)
+    public ToolFiles(ICakeContext  context, BuildSettings settings, BuildPathSettings pathSettings, BuildDirectories dirs)
     {
-        if (context == null)
-        {
-            throw new ArgumentNullException("context");
-        }
-        if (settings == null)
-        {
-            throw new ArgumentNullException("settings");
-        }
-
         _context = context;
 
         DotNet = context.IsRunningOnWindows()
@@ -79,29 +85,37 @@ public class BuildFiles
 {
     private readonly ICakeContext _context;
 
+    public FilePath Solution { get; private set; }
     public FilePath CommonAssemblyInfo { get; private set; }
 
-    public BuildFiles(ICakeContext context, BuildPathSettings settings)
+    public BuildFiles(ICakeContext context, BuildSettings settings, BuildPathSettings pathSettings, ProjectInfo projectInfo)
     {
-        if (context == null)
-        {
-            throw new ArgumentNullException("context");
-        }
-        if (settings == null)
-        {
-            throw new ArgumentNullException("settings");
-        }
-
         _context = context;
 
-        string commonAssemblyInfoDirectoryPath = settings.CommonAssemblyInfoDirectoryPath ?? "./src";
-        string commonAssemblyInfoFileName = settings.CommonAssemblyInfoFileName ?? "CommonAssemblyInfo.cs";
-        CommonAssemblyInfo = ((DirectoryPath) commonAssemblyInfoDirectoryPath).CombineWithFilePath(commonAssemblyInfoFileName);;
+        string solutionDirectoryPath = pathSettings.SolutionDirectoryPath ?? ".";
+        string solutionFileName = pathSettings.SolutionFileName ?? projectInfo.Name;
+        if (string.IsNullOrEmpty(solutionFileName))
+        {
+            // solution file name cannot be empty because this triggers argumment exception in Cake.Core
+            solutionFileName = "_Unspecfied_";
+        }
+        if (false == solutionFileName.EndsWith(".sln"))
+        {
+            solutionFileName = string.Concat(solutionFileName, ".sln");
+        }
+
+        Solution = ((DirectoryPath) solutionDirectoryPath).CombineWithFilePath(solutionFileName);
+
+        string commonAssemblyInfoDirectoryPath = pathSettings.CommonAssemblyInfoDirectoryPath ?? "./src";
+        string commonAssemblyInfoFileName = pathSettings.CommonAssemblyInfoFileName ?? "CommonAssemblyInfo.cs";
+
+        CommonAssemblyInfo = ((DirectoryPath) commonAssemblyInfoDirectoryPath).CombineWithFilePath(commonAssemblyInfoFileName);
     }
 
     public void PrintToLog()
     {
         _context.Information("Files configured:");
+        _context.Information("  Solution:           {0}", Solution);
         _context.Information("  CommonAssemblyInfo: {0}", CommonAssemblyInfo);
     }
 }
@@ -120,28 +134,19 @@ public class BuildDirectories
     public DirectoryPath Nuspec { get; private set; }
     public DirectoryPath Packages { get; private set; }
 
-    public BuildDirectories(ICakeContext context, BuildPathSettings settings)
+    public BuildDirectories(ICakeContext context, BuildSettings settings, BuildPathSettings pathSettings)
     {
-        if (context == null)
-        {
-            throw new ArgumentNullException("context");
-        }
-        if (settings == null)
-        {
-            throw new ArgumentNullException("settings");
-        }
-
         _context = context;
 
         Root = context.MakeAbsolute(context.Environment.WorkingDirectory);
-        Artifacts = settings.ArtifactsDir ?? "./artifacts";
-        Src = settings.SrcDir ?? "./src";
-        Test = settings.TestDir ?? "./test";
-        BuildTools = settings.BuildToolsDir ?? "./.tools";
-        BuildScripts = settings.BuildScriptsDir ?? "./build";
-        DotNet = settings.DotNetDir ?? "./.dotnet";
-        Nuspec = settings.NuspecDir ?? "./nuspec";
-        Packages = settings.PackagesDir ?? "./packages";
+        Artifacts = pathSettings.ArtifactsDir ?? "./artifacts";
+        Src = pathSettings.SrcDir ?? "./src";
+        Test = pathSettings.TestDir ?? "./test";
+        BuildTools = pathSettings.BuildToolsDir ?? "./.tools";
+        BuildScripts = pathSettings.BuildScriptsDir ?? "./build";
+        DotNet = pathSettings.DotNetDir ?? "./.dotnet";
+        Nuspec = pathSettings.NuspecDir ?? "./nuspec";
+        Packages = pathSettings.PackagesDir ?? "./packages";
     }
 
     public void PrintToLog()

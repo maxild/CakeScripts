@@ -37,6 +37,8 @@ public class GitVersionInfo
 
     public string SemVer { get; private set; }
 
+    public string CakeVersion { get; private set; }
+
     public string PatchedVersion { get { return string.Concat(MajorMinorPatch, "-*"); } }
 
         public void PrintToLog()
@@ -67,6 +69,7 @@ public class GitVersionInfo
 
             if (false == buildSystem.IsLocalBuild)
             {
+                // Running on AppVeyor...
                 context.GitVersion(new GitVersionSettings
                 {
                     OutputType = GitVersionOutput.BuildServer
@@ -79,6 +82,7 @@ public class GitVersionInfo
             }
             else
             {
+                // Running on locally...
                 var assertedVersions = context.GitVersion(new GitVersionSettings
                 {
                     OutputType = GitVersionOutput.Json
@@ -105,7 +109,8 @@ public class GitVersionInfo
             AssemblyVersion = majorMinorPatch,
             AssemblyFileVersion = string.Concat(majorMinorPatch, ".0"),
             AssemblyInformationalVersion = infoVer,
-            SemVer = semVer
+            SemVer = semVer,
+            CakeVersion = typeof(ICakeContext).Assembly.GetName().Version.ToString()
         };
     }
 }

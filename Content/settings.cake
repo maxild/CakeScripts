@@ -1,10 +1,10 @@
-// TODO: Solution.sln
-// TODO: Mandatory fields: ProjectName, RepositoryName
-
+// TODO: No default values in settings (user specified) DTO's
 public class BuildSettings
 {
     // default values
     const string GITHUB_REPOSITORY_OWNER = "maxild";
+
+    public string ProjectName { get; set; }
 
     // TODO: GithubSettings
     private string _repositoryOwner;
@@ -15,7 +15,6 @@ public class BuildSettings
     }
 
     public string RepositoryName { get; set;}
-    public string Remote { get { return string.Concat(RepositoryOwner, "/", RepositoryName); } }
 
     // TODO: EnvironmentSettings
     private EnvironmentVariableNames _environmentVariableNames;
@@ -34,4 +33,3 @@ public class BuildSettings
     public string DotNetCliChannel { get; set; }
     public string DotNetCliVersion { get; set; }
 }
-

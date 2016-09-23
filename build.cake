@@ -16,7 +16,6 @@ var parameters = BuildParameters.GetParameters(
     BuildSystem,        // BuildSystem alias
     new BuildSettings   // My personal overrides
     {
-        RepositoryName = "CakeScripts",
         EnvironmentVariableNames = new EnvironmentVariableNames
         {
             GitHubPasswordVariable = "github_password"
@@ -27,6 +26,27 @@ var parameters = BuildParameters.GetParameters(
     {
         NuspecDir = "."
     });
+
+///////////////////////////////////////////////////////////////////////////////
+// SETUP / TEARDOWN
+///////////////////////////////////////////////////////////////////////////////
+
+Setup(context =>
+{
+    if (parameters.Git.IsMasterBranch && (context.Log.Verbosity != Verbosity.Diagnostic)) {
+        Information("Increasing verbosity to diagnostic.");
+        context.Log.Verbosity = Verbosity.Diagnostic;
+    }
+
+    Information("Building version {0} of {1} ({2}, {3}) using version {4} of Cake. (IsTagPush: {5})",
+        parameters.VersionInfo.SemVer,
+        parameters.Project.Name,
+        parameters.Configuration,
+        parameters.Target,
+        parameters.VersionInfo.CakeVersion,
+        parameters.IsTagPush);
+});
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // TASKS

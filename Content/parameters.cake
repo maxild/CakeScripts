@@ -28,6 +28,8 @@ public class BuildParameters
     // public NuGetCredentials MyGet { get; private set; }
     // public NuGetCredentials NuGet { get; private set; }
 
+    public ProjectInfo Project { get; private set; }
+
     public SecretEnvironment Secrets { get; private set; }
 
     public BuildPaths Paths { get; private set; }
@@ -126,6 +128,8 @@ public class BuildParameters
         // ... executing any git commands like 'git rev-parse HEAD'
         var repoInfo = GitRepoInfo.Calculate(context);
 
+        var projectInfo = new ProjectInfo(context, settings, repoInfo);
+
         return new BuildParameters(context, settings)
         {
             Target = context.Argument("target", "Default"),
@@ -133,7 +137,8 @@ public class BuildParameters
 
             IsRunningOnUnix = context.IsRunningOnUnix(),
             IsRunningOnWindows = context.IsRunningOnWindows(),
-            IsMainRepository = repoInfo.Remote.Equals(settings.Remote, StringComparison.OrdinalIgnoreCase),
+
+            IsMainRepository = repoInfo.IsRemoteEqualToRepoSettings(settings),
 
             // Build system...
             IsLocalBuild = buildSystem.IsLocalBuild,
@@ -148,7 +153,8 @@ public class BuildParameters
             VersionInfo = versionInfo,
             Git = repoInfo,
             Secrets = new SecretEnvironment(context, settings.EnvironmentVariableNames),
-            Paths = new BuildPaths(context, pathSettings ?? new BuildPathSettings())
+            Project = projectInfo,
+            Paths = new BuildPaths(context, settings, pathSettings ?? new BuildPathSettings(), projectInfo)
         };
     }
 
@@ -181,5 +187,30 @@ public class BuildParameters
 
         public string NuGetApiKey { get { return _context.EnvironmentVariable(_nameProvider.NuGetApiKeyVariable); } }
     }
-
 }
+
+public class ProjectInfo
+{
+    private readonly ICakeContext _context;
+
+    public ProjectInfo(ICakeContext context, BuildSettings settings, GitRepoInfo repoInfo)
+    {
+        if (context == null)
+        {
+            throw new ArgumentNullException("context");
+        }
+        _context = context;
+
+        Name = settings.ProjectName ??
+                settings.RepositoryName ??
+                repoInfo.RepositoryName ?? string.Empty;
+    }
+
+    public string Name { get; private set; }
+
+    public void PrintToLog()
+    {
+        _context.Information("Name: {0}", Name);
+    }
+}
+
