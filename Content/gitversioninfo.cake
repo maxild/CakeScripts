@@ -69,7 +69,7 @@ public class GitVersionInfo
 
             if (false == buildSystem.IsLocalBuild)
             {
-                // Running on AppVeyor...
+                // Running on AppVeyor, we have to patch/setup local tracking branches
                 context.GitVersion(new GitVersionSettings
                 {
                     OutputType = GitVersionOutput.BuildServer
@@ -80,19 +80,18 @@ public class GitVersionInfo
                 semVer = context.EnvironmentVariable("GitVersion_SemVer");
                 infoVer = context.EnvironmentVariable("GitVersion_InformationalVersion");
             }
-            else
-            {
-                // Running on locally...
-                var assertedVersions = context.GitVersion(new GitVersionSettings
-                {
-                    OutputType = GitVersionOutput.Json
-                });
 
-                majorMinorPatch = assertedVersions.MajorMinorPatch;
-                pkgVersion = assertedVersions.LegacySemVerPadded;
-                semVer = assertedVersions.SemVer;
-                infoVer = assertedVersions.InformationalVersion;
-            }
+            var assertedVersions = context.GitVersion(new GitVersionSettings
+            {
+                OutputType = GitVersionOutput.Json
+            });
+
+            majorMinorPatch = assertedVersions.MajorMinorPatch;
+            pkgVersion = assertedVersions.LegacySemVerPadded;
+            semVer = assertedVersions.SemVer;
+            infoVer = assertedVersions.InformationalVersion;
+
+            context.Information("Calculated Semantic Version: {0}", semVer);
         }
         else
         {
