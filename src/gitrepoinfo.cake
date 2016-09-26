@@ -23,6 +23,9 @@ public class GitRepoInfo
     // git rev-parse HEAD or git rev-parse --verify HEAD
     public string CommitId { get; private set; } // partial sha with 7 chars (a3497c9)
 
+    // git rev-list --format=%ad --date=iso-strict --max-count=1 HEAD
+    public DateTimeOffset CommitDate { get; private set; } // Author date as strict ISO format with timezone offset
+
     // git rev-parse --abbrev-ref HEAD
     public string Branch { get; private set; }
 
@@ -66,6 +69,7 @@ public class GitRepoInfo
     {
         _context.Information("GIT Repository Information:");
         _context.Information("  CommitId:                 {0}", CommitId);
+        _context.Information("  CommitDate:               {0}", CommitDate);
         _context.Information("  Sha:                      {0}", Sha);
         _context.Information("  Branch:                   {0}", Branch);
         _context.Information("  IsFeatureBranch:          {0}", IsFeatureBranch);
@@ -89,14 +93,18 @@ public class GitRepoInfo
         }
 
         // using env var PATH
-        var git = new GitExec(context) ;
+        const char SEP = '#';
+        var git = new GitExec(context, SEP);
 
         context.Information("Git path: {0}", git.Path);
 
         string branch = git.Command("rev-parse --verify --abbrev-ref HEAD");
 
+        // 2016-09-26T14:59:32+02:00
+        string commitDateAsIsoWithOffset = git.Command("rev-list --format=%ad --date=iso-strict --max-count=1 HEAD").Split(SEP).Last();
+
         // zero or one tag seem most likely, but a single commit can have many tags (we pick arbitrary tag, if many exists)
-        string[] tags = git.Command("tag -l --points-at HEAD").Split(' ');
+        string[] tags = git.Command("tag -l --points-at HEAD").Split(SEP);
         string tag = tags.Length > 0 ? tags[0] : string.Empty;
 
         string remoteUrl = git.Command("remote get-url origin");  // https://github.com/maxild/CakeScripts.git
@@ -120,7 +128,7 @@ public class GitRepoInfo
         {
             Sha = git.Command("rev-parse --verify HEAD"),
             CommitId = git.Command("rev-parse --verify --short HEAD"),
-            Branch = branch,
+            CommitDate = DateTimeOffset.ParseExact(commitDateAsIsoWithOffset, "yyyy-MM-dd'T'HH:mm:ss.FFFK", System.Globalization.CultureInfo.InvariantCulture),
             IsFeatureBranch = System.Text.RegularExpressions.Regex.IsMatch(branch, FeatureBranchRegex, System.Text.RegularExpressions.RegexOptions.IgnoreCase),
             IsDevelopBranch = System.Text.RegularExpressions.Regex.IsMatch(branch, DevelopBranchRegex, System.Text.RegularExpressions.RegexOptions.IgnoreCase),
             IsHotfixBranch = System.Text.RegularExpressions.Regex.IsMatch(branch, HotfixBranchRegex, System.Text.RegularExpressions.RegexOptions.IgnoreCase),
@@ -138,8 +146,9 @@ public class GitRepoInfo
     {
         private readonly ICakeContext _context;
         private readonly string _gitPath;
+        private readonly char _newLineToken;
 
-        public GitExec(ICakeContext context)
+        public GitExec(ICakeContext context, char newLineToken)
         {
             _context = context;
             var path = context.Tools.Resolve("git.exe").FullPath;
@@ -148,6 +157,7 @@ public class GitRepoInfo
                 throw new InvalidOperationException("Cake could not resolve the PATH to git.exe");
             }
             Path = path;
+            _newLineToken = newLineToken;
         }
 
         public string Path { get; private set; }
@@ -161,7 +171,7 @@ public class GitRepoInfo
                 Arguments = arguments,
                 RedirectStandardOutput = true,
             }, out stdout);
-            string result = exit == 0 ? (string.Join(" ", stdout) ?? string.Empty).Trim() : string.Empty;
+            string result = exit == 0 ? (string.Join(_newLineToken.ToString(), stdout) ?? string.Empty).Trim() : string.Empty;
             //_context.Information("git {0} --> {1}", arguments, result);
             return result;
         }
