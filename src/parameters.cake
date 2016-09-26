@@ -50,6 +50,32 @@ public class BuildParameters
         return new Project(_context, testProjectPath, Configuration);
     }
 
+    public IEnumerable<FilePath> GetBuildArtifacts(IEnumerable<string> projectNames)
+    {
+        return GetBuildArtifacts(projectNames.ToArray());
+    }
+
+    // project directory and build artifact most have the same name (not considering the extension)
+    public IEnumerable<FilePath> GetBuildArtifacts(params string[] projectNames)
+    {
+        // paths to all direct subdirs below ./src and ./test
+        var projectPaths = System.IO.Directory.EnumerateDirectories(Paths.Directories.Src.FullPath, "*", System.IO.SearchOption.TopDirectoryOnly)
+            .Concat(System.IO.Directory.EnumerateDirectories(Paths.Directories.Test.FullPath, "*", System.IO.SearchOption.TopDirectoryOnly));
+
+        foreach (string projectName in projectNames)
+        {
+            string projectPath = projectPaths
+                .Where(path => projectName.Equals(System.IO.Path.GetFileName(path), StringComparison.OrdinalIgnoreCase))
+                .First();
+
+            var artifactName = string.Concat(projectName, ".dll");
+            var artifactPath = _context.Directory("bin") + _context.Directory(Configuration) + _context.File(artifactName);
+            var buildArtifactPath = ((DirectoryPath) projectPath).CombineWithFilePath(artifactPath);
+
+            yield return buildArtifactPath;
+        }
+    }
+
     public void PrintToLog()
     {
         _context.Information("Target:              {0}", Target);
