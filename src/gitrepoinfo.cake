@@ -129,6 +129,7 @@ public class GitRepoInfo
             Sha = git.Command("rev-parse --verify HEAD"),
             CommitId = git.Command("rev-parse --verify --short HEAD"),
             CommitDate = DateTimeOffset.ParseExact(commitDateAsIsoWithOffset, "yyyy-MM-dd'T'HH:mm:ss.FFFK", System.Globalization.CultureInfo.InvariantCulture),
+            Branch = branch,
             IsFeatureBranch = System.Text.RegularExpressions.Regex.IsMatch(branch, FeatureBranchRegex, System.Text.RegularExpressions.RegexOptions.IgnoreCase),
             IsDevelopBranch = System.Text.RegularExpressions.Regex.IsMatch(branch, DevelopBranchRegex, System.Text.RegularExpressions.RegexOptions.IgnoreCase),
             IsHotfixBranch = System.Text.RegularExpressions.Regex.IsMatch(branch, HotfixBranchRegex, System.Text.RegularExpressions.RegexOptions.IgnoreCase),
