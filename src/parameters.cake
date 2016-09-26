@@ -38,6 +38,18 @@ public class BuildParameters
 
     public GitRepoInfo Git { get; private set; }
 
+    public Project SrcProject(string projectName)
+    {
+        var projectPath = Paths.Directories.Src.Combine(projectName);
+        return new Project(_context, projectPath, Configuration);
+    }
+
+    public Project TestProject(string testProjectName)
+    {
+        var testProjectPath = Paths.Directories.Test.Combine(testProjectName);
+        return new Project(_context, testProjectPath, Configuration);
+    }
+
     public void PrintToLog()
     {
         _context.Information("Target:              {0}", Target);
@@ -123,12 +135,13 @@ public class BuildParameters
         // ... executing any git commands like 'git rev-parse HEAD'
         var repoInfo = GitRepoInfo.Calculate(context);
 
+        var configuration = context.Argument("configuration", "Release");
         var projectInfo = new ProjectInfo(context, settings, repoInfo);
 
         return new BuildParameters(context, settings)
         {
             Target = context.Argument("target", "Default"),
-            Configuration = context.Argument("configuration", "Release"),
+            Configuration = configuration,
 
             IsRunningOnUnix = context.IsRunningOnUnix(),
             IsRunningOnWindows = context.IsRunningOnWindows(),
@@ -206,6 +219,31 @@ public class ProjectInfo
     public void PrintToLog()
     {
         _context.Information("Name: {0}", Name);
+    }
+}
+
+public class Project
+{
+    private readonly ICakeContext _context;
+    private readonly string _configuration;
+
+    public Project(ICakeContext context, DirectoryPath projectPath, string configuration)
+    {
+        if (context == null)
+        {
+            throw new ArgumentNullException("context");
+        }
+        _context = context;
+        Path = projectPath;
+        _configuration = configuration;
+    }
+
+    public DirectoryPath Path { get; private set; }
+
+    public FilePath GetBuildArtifact(string buildArtifact)
+    {
+        var artifactPath = _context.Directory("bin") + _context.Directory(_configuration) + _context.File(buildArtifact);
+        return Path.CombineWithFilePath(artifactPath);
     }
 }
 

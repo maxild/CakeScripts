@@ -16,7 +16,11 @@ public class BuildPathSettings
 
 public class BuildPaths
 {
-    public BuildPaths(ICakeContext context, BuildSettings settings, BuildPathSettings pathSettings, ProjectInfo projectInfo)
+    public BuildPaths(
+        ICakeContext context,
+        BuildSettings settings,
+        BuildPathSettings pathSettings,
+        ProjectInfo projectInfo)
     {
         if (context == null)
         {
@@ -35,9 +39,9 @@ public class BuildPaths
             throw new ArgumentNullException("projectInfo");
         }
 
-        Files = new BuildFiles(context, settings, pathSettings, projectInfo);
+        Files       = new BuildFiles      (context, settings, pathSettings, projectInfo);
         Directories = new BuildDirectories(context, settings, pathSettings);
-        Tools = new ToolFiles(context, settings, pathSettings, Directories);
+        Tools       = new ToolFiles       (context, settings, pathSettings, Directories);
     }
 
     public BuildFiles Files { get; private set; }
@@ -63,7 +67,11 @@ public class ToolFiles
     public FilePath NuGet { get; private set; }
     // TODO: Git
 
-    public ToolFiles(ICakeContext  context, BuildSettings settings, BuildPathSettings pathSettings, BuildDirectories dirs)
+    public ToolFiles(
+        ICakeContext  context,
+        BuildSettings settings,
+        BuildPathSettings pathSettings,
+        BuildDirectories dirs)
     {
         _context = context;
 
@@ -88,7 +96,11 @@ public class BuildFiles
     public FilePath Solution { get; private set; }
     public FilePath CommonAssemblyInfo { get; private set; }
 
-    public BuildFiles(ICakeContext context, BuildSettings settings, BuildPathSettings pathSettings, ProjectInfo projectInfo)
+    public BuildFiles(
+        ICakeContext context,
+        BuildSettings settings,
+        BuildPathSettings pathSettings,
+        ProjectInfo projectInfo)
     {
         _context = context;
 
@@ -134,7 +146,11 @@ public class BuildDirectories
     public DirectoryPath Nuspec { get; private set; }
     public DirectoryPath Packages { get; private set; }
 
-    public BuildDirectories(ICakeContext context, BuildSettings settings, BuildPathSettings pathSettings)
+    public BuildDirectories(
+        ICakeContext context,
+        BuildSettings settings,
+        BuildPathSettings pathSettings
+        )
     {
         _context = context;
 
