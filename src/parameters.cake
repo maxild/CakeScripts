@@ -2,11 +2,17 @@ public class BuildParameters
 {
     private readonly ICakeContext _context;
     private readonly BuildSettings _settings;
+    private readonly Func<BuildParameters, bool> _deployToCIFeedFunc;
+    private readonly Func<BuildParameters, bool> _deployToRCFeedFunc;
+    private readonly Func<BuildParameters, bool> _deployToProdFeedFunc;
 
     private BuildParameters(ICakeContext context, BuildSettings settings)
     {
         _context = context;
         _settings = settings;
+        _deployToCIFeedFunc = settings.DeployToCIFeed ?? DefaultDeployToCIFeed;
+        _deployToRCFeedFunc = settings.DeployToRCFeed ?? DefaultDeployToRCFeed;
+        _deployToProdFeedFunc = settings.DeployToProdFeed ?? DefaultDeployToProdFeed;
     }
 
     public string Target { get; private set; }
@@ -21,16 +27,44 @@ public class BuildParameters
     public bool IsPullRequest { get; private set; }
     public bool IsTagPush { get; private set; }
 
-    //public bool IsPublishBuild { get; private set; }
-    //public bool IsReleaseBuild { get; private set; }
+    // Maximum of 3 NuGet feeds can be configured
+    public NuGetFeed CIFeed { get; private set; }
+    public NuGetFeed RCFeed { get; private set; }
+    public NuGetFeed ProdFeed { get; private set; }
 
-    // public GitHubCredentials GitHub { get; private set; }
-    // public NuGetCredentials MyGet { get; private set; }
-    // public NuGetCredentials NuGet { get; private set; }
+    public bool DeployToCIFeed { get { return DeployToAnyFeed(this) && _deployToCIFeedFunc(this); } }
+    public bool DeployToRCFeed { get { return DeployToAnyFeed(this) && _deployToRCFeedFunc(this); } }
+    public bool DeployToProdFeed { get { return DeployToAnyFeed(this) && _deployToProdFeedFunc(this); } }
+
+    static bool DeployToAnyFeed(BuildParameters parameters)
+    {
+        return false == parameters.IsLocalBuild &&
+               false == parameters.IsPullRequest &&
+               parameters.IsMainRepository;
+    }
+
+    static bool DefaultDeployToCIFeed(BuildParameters parameters)
+    {
+        // We are running on appveyor and all other than master branch is built by a commit push
+        return false == parameters.Git.IsMasterBranch &&
+               false == parameters.IsTagPush;
+    }
+
+    static bool DefaultDeployToRCFeed(BuildParameters parameters)
+    {
+        // We are running on appveyor and the master branch is built because of a tag push
+        return false == parameters.Git.IsMasterBranch &&
+               parameters.IsTagPush;
+    }
+
+    static bool DefaultDeployToProdFeed(BuildParameters parameters)
+    {
+        // We are running on appveyor and the master branch is built because of a tag push
+        return parameters.Git.IsMasterBranch &&
+               parameters.IsTagPush;
+    }
 
     public ProjectInfo Project { get; private set; }
-
-    public SecretEnvironment Secrets { get; private set; }
 
     public BuildPaths Paths { get; private set; }
 
@@ -87,6 +121,9 @@ public class BuildParameters
         _context.Information("IsRunningOnAppVeyor: {0}", IsRunningOnAppVeyor);
         _context.Information("IsPullRequest:       {0}", IsPullRequest);
         _context.Information("IsTagPush:           {0}", IsTagPush);
+        _context.Information("DeployToCIFeed:      {0}", DeployToCIFeed);
+        _context.Information("DeployToRCFeed:      {0}", DeployToRCFeed);
+        _context.Information("DeployToProdFeed:    {0}", DeployToProdFeed);
         VersionInfo.PrintToLog();
         Git.PrintToLog();
         Paths.PrintToLog();
@@ -184,42 +221,36 @@ public class BuildParameters
                 !string.IsNullOrWhiteSpace(buildSystem.AppVeyor.Environment.Repository.Tag.Name)
             ),
 
+            CIFeed = new NuGetFeed(
+                apiKey: context.EnvironmentVariable(settings.DeployToCIApiKeyVariable), // secret
+                sourceUrl: settings.DeployToCISourceUrl ?? context.EnvironmentVariable(settings.DeployToCISourceUrlVariable)
+            ),
+            RCFeed = new NuGetFeed(
+                apiKey: context.EnvironmentVariable(settings.DeployToRCApiKeyVariable), // secret
+                sourceUrl: settings.DeployToRCSourceUrl ?? context.EnvironmentVariable(settings.DeployToRCSourceUrlVariable)
+            ),
+            ProdFeed = new NuGetFeed(
+                apiKey: context.EnvironmentVariable(settings.DeployToProdApiKeyVariable), // secret
+                sourceUrl: settings.DeployToProdSourceUrl ?? context.EnvironmentVariable(settings.DeployToProdSourceUrlVariable)
+            ),
+
             VersionInfo = versionInfo,
             Git = repoInfo,
-            Secrets = new SecretEnvironment(context, settings.EnvironmentVariableNames),
             Project = projectInfo,
             Paths = new BuildPaths(context, settings, pathSettings ?? new BuildPathSettings(), projectInfo)
         };
     }
 
-    public class SecretEnvironment
+    public class NuGetFeed
     {
-        private readonly ICakeContext _context;
-        private readonly EnvironmentVariableNames _nameProvider;
+        public string ApiKey { get; private set; }
+        public string SourceUrl { get; private set; }
 
-        public SecretEnvironment(ICakeContext context, EnvironmentVariableNames environmentVariableNames)
+        public NuGetFeed(string apiKey, string sourceUrl)
         {
-            if (context == null)
-            {
-                throw new ArgumentNullException("context");
-            }
-            if (environmentVariableNames == null)
-            {
-                throw new ArgumentNullException("environmentVariableNames");
-            }
-            _context = context;
-            _nameProvider = environmentVariableNames;
+            ApiKey = apiKey;
+            SourceUrl = sourceUrl;
         }
-
-        public string GithubPassword { get { return _context.EnvironmentVariable(_nameProvider.GitHubPasswordVariable); } }
-
-        public string MyGetMaxfireApiKey { get { return _context.EnvironmentVariable(_nameProvider.MyGetMaxfireApiKeyVariable); } }
-        public string MyGetMaxfireCiApiKey { get { return _context.EnvironmentVariable(_nameProvider.MyGetMaxfireCiApiKeyVariable); } }
-
-        public string MyGetBrfApiKey { get { return _context.EnvironmentVariable(_nameProvider.MyGetBrfApiKeyVariable); } }
-        public string MyGetBrfCiApiKey { get { return _context.EnvironmentVariable(_nameProvider.MyGetBrfCiApiKeyVariable); } }
-
-        public string NuGetApiKey { get { return _context.EnvironmentVariable(_nameProvider.NuGetApiKeyVariable); } }
     }
 }
 
@@ -272,4 +303,5 @@ public class Project
         return Path.CombineWithFilePath(artifactPath);
     }
 }
+
 

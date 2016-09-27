@@ -5,7 +5,6 @@
 #load "src/gitrepoinfo.cake"
 #load "src/parameters.cake"
 #load "src/settings.cake"
-#load "src/environment.cake"
 #load "src/paths.cake"
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -16,15 +15,14 @@ var parameters = BuildParameters.GetParameters(
     BuildSystem,        // BuildSystem alias
     new BuildSettings   // My personal overrides
     {
-        EnvironmentVariableNames = new EnvironmentVariableNames
-        {
-            GitHubPasswordVariable = "github_password"
-        }
+        DeployToProdFeed = _ => true,
+        DeployToProdSourceUrl = @"https://www.myget.org/F/maxfire/api/v2/package"
     },
     new BuildPathSettings
     {
         NuspecDir = "."     // override default './nuspec' value
     });
+var publishingError = false;
 
 ///////////////////////////////////////////////////////////////////////////////
 // SETUP / TEARDOWN
@@ -87,57 +85,66 @@ Task("Package")
     });
 });
 
-// Task("Publish-MyGet-Packages")
-//     .IsDependentOn("Package")
-//     .WithCriteria(() => !parameters.IsLocalBuild)
-//     .WithCriteria(() => !parameters.IsPullRequest)
-//     .WithCriteria(() => parameters.IsMainRepository)
-//     .WithCriteria(() => parameters.IsTagPush || !parameters.IsMasterBranch)
-//     .WithCriteria(() => DirectoryExists(parameters.Paths.Directories.Artifacts))
-//     .Does(() =>
-// {
-//     if (string.IsNullOrEmpty(parameters.MyGet.ApiKey))
-//     {
-//         throw new InvalidOperationException("Could not resolve MyGet API key.");
-//     }
+Task("Upload-AppVeyor-Artifacts")
+    .IsDependentOn("Package")
+    .WithCriteria(() => parameters.IsRunningOnAppVeyor)
+    .WithCriteria(() => DirectoryExists(parameters.Paths.Directories.Artifacts))
+    .Does(() =>
+{
+    foreach (var nupkgFile in GetFiles(parameters.Paths.Directories.Artifacts + "/*.nupkg"))
+    {
+        // appveyor PushArtifact <path> [options] (See https://www.appveyor.com/docs/build-worker-api/#push-artifact)
+        AppVeyor.UploadArtifact(nupkgFile);
+    }
+});
 
-//     if (string.IsNullOrEmpty(parameters.MyGet.SourceUrl))
-//     {
-//         throw new InvalidOperationException("Could not resolve MyGet API url.");
-//     }
+Task("Publish-Packages")
+    .IsDependentOn("Package")
+    .WithCriteria(() => parameters.DeployToProdFeed)
+    .WithCriteria(() => DirectoryExists(parameters.Paths.Directories.Artifacts))
+    .Does(() =>
+{
+    if (string.IsNullOrEmpty(parameters.ProdFeed.ApiKey))
+    {
+        throw new InvalidOperationException("Could not resolve NuGet push API key.");
+    }
 
-//     var nupkgFile = GetFiles(parameters.Paths.Directories.Artifacts + "*.nupkg");
+    if (string.IsNullOrEmpty(parameters.ProdFeed.SourceUrl))
+    {
+        throw new InvalidOperationException("Could not resolve NuGet push URL.");
+    }
 
-//     NuGetPush(nupkgFile, new NuGetPushSettings {
-//         Source = parameters.MyGet.SourceUrl,
-//         ApiKey = parameters.MyGet.ApiKey
-//     });
-// })
-// .OnError(exception =>
-// {
-//     Information("Publish-MyGet-Packages Task failed, but continuing with next Task...");
-//     publishingError = true;
-// });
+    var nupkgFiles = GetFiles(parameters.Paths.Directories.Artifacts + "*.nupkg");
 
-// Publish-GitHub-Release
+    NuGetPush(nupkgFiles, new NuGetPushSettings {
+        Source = parameters.ProdFeed.SourceUrl,
+        ApiKey = parameters.ProdFeed.ApiKey
+    });
+})
+.OnError(exception =>
+{
+    Information("Publish-Packages Task failed, but continuing with next Task...");
+    publishingError = true;
+});
 
 Task("Default")
     .IsDependentOn("Show-Info")
     .IsDependentOn("Print-AppVeyor-Environment-Variables")
     .IsDependentOn("Package");
 
-// Task("AppVeyor")
-//     .IsDependentOn("Upload-AppVeyor-Artifacts")
-//     .IsDependentOn("Publish-MyGet-Packages")
-//     .IsDependentOn("Publish-Nuget-Packages")
-//     .IsDependentOn("Publish-GitHub-Release")
-//     .Finally(() =>
-// {
-//     if (publishingError)
-//     {
-//         throw new Exception("An error occurred during the publishing of " + parameters.Project.Name + ".  All publishing tasks have been attempted.");
-//     }
-// });
+Task("AppVeyor")
+    .IsDependentOn("Show-Info")
+    .IsDependentOn("Print-AppVeyor-Environment-Variables")
+    .IsDependentOn("Upload-AppVeyor-Artifacts")
+    .IsDependentOn("Publish-Packages")
+    //.IsDependentOn("Publish-GitHub-Release")
+    .Finally(() =>
+{
+    if (publishingError)
+    {
+        throw new Exception("An error occurred during the publishing of " + parameters.Project.Name + ".  All publishing tasks have been attempted.");
+    }
+});
 
 ///////////////////////////////////////////////////////////////////////////////
 // EXECUTION

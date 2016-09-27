@@ -1,19 +1,13 @@
+environment:
+  deployment_api_key:
+    secure: EOVLFyiHRhh9Jij3/mITdSV5JH1SzT8JUbqqTIFtvOPndNeMme3mME01ws3+5nFB
+
 init:
   - git config --global core.autocrlf input
 
 build_script:
-  - ps: .\build.ps1 -verbosity diagnostic
+  - ps: .\build.ps1 -target AppVeyor -verbosity diagnostic
 
 test: off
 
-artifacts:
-- path: artifacts\*.nupkg
-  name: Packages
-
-deploy:
-- provider: NuGet
-  server: https://www.myget.org/F/maxfire/api/v2/package
-  api_key:
-    secure: EOVLFyiHRhh9Jij3/mITdSV5JH1SzT8JUbqqTIFtvOPndNeMme3mME01ws3+5nFB
-  skip_symbols: true
-  artifact: Packages
+deploy: off
