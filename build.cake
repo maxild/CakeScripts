@@ -85,17 +85,16 @@ Task("Package")
     });
 });
 
+// appveyor PushArtifact <path> [options] (See https://www.appveyor.com/docs/build-worker-api/#push-artifact)
 Task("Upload-AppVeyor-Artifacts")
     .IsDependentOn("Package")
     .WithCriteria(() => parameters.IsRunningOnAppVeyor)
     .WithCriteria(() => DirectoryExists(parameters.Paths.Directories.Artifacts))
     .Does(() =>
 {
-    foreach (var nupkgFile in GetFiles(parameters.Paths.Directories.Artifacts + "/*.nupkg"))
-    {
-        // appveyor PushArtifact <path> [options] (See https://www.appveyor.com/docs/build-worker-api/#push-artifact)
-        AppVeyor.UploadArtifact(nupkgFile);
-    }
+    var nupkgFile = GetFiles(parameters.Paths.Directories.Artifacts + "/*.nupkg").Single();
+    AppVeyor.UploadArtifact(nupkgFile);
+
 });
 
 Task("Publish-Packages")
@@ -114,9 +113,9 @@ Task("Publish-Packages")
         throw new InvalidOperationException("Could not resolve NuGet push URL.");
     }
 
-    var nupkgFiles = GetFiles(parameters.Paths.Directories.Artifacts + "*.nupkg");
+    var nupkgFile = GetFiles(parameters.Paths.Directories.Artifacts + "/*.nupkg").Single();
 
-    NuGetPush(nupkgFiles, new NuGetPushSettings {
+    NuGetPush(nupkgFile, new NuGetPushSettings {
         Source = parameters.ProdFeed.SourceUrl,
         ApiKey = parameters.ProdFeed.ApiKey
     });
