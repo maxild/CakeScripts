@@ -245,7 +245,7 @@ Task("AppVeyor")
     .IsDependentOn("Print-AppVeyor-Environment-Variables")
     .IsDependentOn("Upload-AppVeyor-Artifacts")
     .IsDependentOn("Publish-Packages")
-    .IsDependentOn("Publish-GitHub-Release")
+    //.IsDependentOn("Publish-GitHub-Release")
     .Finally(() =>
 {
     if (publishingError)
