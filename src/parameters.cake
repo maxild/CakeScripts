@@ -64,6 +64,8 @@ public class BuildParameters
                parameters.IsTagPush;
     }
 
+    public Credentials GitHub { get; private set; }
+
     public ProjectInfo Project { get; private set; }
 
     public BuildPaths Paths { get; private set; }
@@ -121,9 +123,14 @@ public class BuildParameters
         _context.Information("IsRunningOnAppVeyor: {0}", IsRunningOnAppVeyor);
         _context.Information("IsPullRequest:       {0}", IsPullRequest);
         _context.Information("IsTagPush:           {0}", IsTagPush);
+        _context.Information("GitHub.UserName:     {0}", GitHub.UserName);
+        _context.Information("CIFeed:              {0}", CIFeed.SourceUrl);
         _context.Information("DeployToCIFeed:      {0}", DeployToCIFeed);
+        _context.Information("RCFeed:              {0}", RCFeed.SourceUrl);
         _context.Information("DeployToRCFeed:      {0}", DeployToRCFeed);
+        _context.Information("ProdFeed:            {0}", ProdFeed.SourceUrl);
         _context.Information("DeployToProdFeed:    {0}", DeployToProdFeed);
+
         VersionInfo.PrintToLog();
         Git.PrintToLog();
         Paths.PrintToLog();
@@ -234,6 +241,11 @@ public class BuildParameters
                 sourceUrl: settings.DeployToProdSourceUrl ?? context.EnvironmentVariable(settings.DeployToProdSourceUrlVariable)
             ),
 
+            GitHub = new Credentials(
+                userName: settings.GitHubUserName ?? context.EnvironmentVariable(settings.GitHubUserNameVariable) ?? settings.RepositoryOwner,
+                password: context.EnvironmentVariable(settings.GitHubPasswordVariable)
+            ),
+
             VersionInfo = versionInfo,
             Git = repoInfo,
             Project = projectInfo,
@@ -250,6 +262,18 @@ public class BuildParameters
         {
             ApiKey = apiKey;
             SourceUrl = sourceUrl;
+        }
+    }
+
+    public class Credentials
+    {
+        public string UserName { get; private set; }
+        public string Password { get; private set; }
+
+        public Credentials(string userName, string password)
+        {
+            UserName = userName;
+            Password = password;
         }
     }
 }

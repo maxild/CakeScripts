@@ -37,6 +37,9 @@ public class GitVersionInfo
 
     public string SemVer { get; private set; }
 
+    // We do not use 'v' prefix on GitHub milestones (i.e. we use '0.4.0' , not 'v0.4.0').
+    public string Milestone { get { return MajorMinorPatch; } }
+
     public string CakeVersion { get; private set; }
 
     public string PatchedVersion { get { return string.Concat(MajorMinorPatch, "-*"); } }

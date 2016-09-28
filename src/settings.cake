@@ -1,30 +1,51 @@
-// TODO: No default values in settings (user specified) DTO's
 public class BuildSettings
 {
-    // default values
-    const string GITHUB_REPOSITORY_OWNER = "maxild";
-
     public string ProjectName { get; set; }
 
-    // TODO: GithubSettings
     private string _repositoryOwner;
     public string RepositoryOwner
     {
-        get { return _repositoryOwner ?? GITHUB_REPOSITORY_OWNER; }
+        get { return _repositoryOwner ?? "maxild"; }
         set { _repositoryOwner = value; }
     }
 
     public string RepositoryName { get; set;}
+    public string GitHubUserName { get; set; }
 
-    static string GITHUB_PASSWORD           = "GITHUB_PASSWORD";
+    public string DeployToCISourceUrl { get; set; }
+    public string DeployToRCSourceUrl { get; set; }
+    public string DeployToProdSourceUrl { get; set; }
 
-    // NuGet push settings
-    static string CI_DEPLOYMENT_API_KEY     = "CI_DEPLOYMENT_API_KEY";
-    static string CI_DEPLOYMENT_SOURCE_URL  = "CI_DEPLOYMENT_SOURCE_URL";
-    static string RC_DEPLOYMENT_API_KEY     = "RC_DEPLOYMENT_API_KEY";
-    static string RC_DEPLOYMENT_SOURCE_URL  = "RC_DEPLOYMENT_SOURCE_URL";
-    static string DEPLOYMENT_API_KEY        = "DEPLOYMENT_API_KEY";
-    static string DEPLOYMENT_SOURCE_URL     = "DEPLOYMENT_SOURCE_URL";
+    public Func<BuildParameters, bool> DeployToCIFeed { get; set; }
+    public Func<BuildParameters, bool> DeployToRCFeed { get; set; }
+    public Func<BuildParameters, bool> DeployToProdFeed { get; set; }
+
+    public bool UseSystemDotNetPath { get; set; }
+    public string DotNetCliInstallScriptUrl { get; set; }
+    public string DotNetCliBranch { get; set; }
+    public string DotNetCliChannel { get; set; }
+    public string DotNetCliVersion { get; set; }
+
+    //
+    // Environment Variables
+    //
+
+    // default names
+    const string GITHUB_PASSWORD           = "GITHUB_PASSWORD";
+    const string GITHUB_USERNAME           = "GITHUB_USERNAME";
+    const string CI_DEPLOYMENT_API_KEY     = "CI_DEPLOYMENT_API_KEY";
+    const string CI_DEPLOYMENT_SOURCE_URL  = "CI_DEPLOYMENT_SOURCE_URL";
+    const string RC_DEPLOYMENT_API_KEY     = "RC_DEPLOYMENT_API_KEY";
+    const string RC_DEPLOYMENT_SOURCE_URL  = "RC_DEPLOYMENT_SOURCE_URL";
+    const string DEPLOYMENT_API_KEY        = "DEPLOYMENT_API_KEY";
+    const string DEPLOYMENT_SOURCE_URL     = "DEPLOYMENT_SOURCE_URL";
+
+    private string _gitHubUserNameVariable;
+    public string GitHubUserNameVariable
+    {
+        get { return _gitHubUserNameVariable ?? GITHUB_USERNAME; }
+        set { _gitHubUserNameVariable = value; }
+    }
 
     private string _gitHubPasswordVariable;
     public string GitHubPasswordVariable
@@ -74,19 +95,4 @@ public class BuildSettings
         get { return _prodDeploymentApiKeyVariable ?? DEPLOYMENT_API_KEY; }
         set { _prodDeploymentApiKeyVariable = value; }
     }
-
-    public string DeployToCISourceUrl { get; set; }
-    public string DeployToRCSourceUrl { get; set; }
-    public string DeployToProdSourceUrl { get; set; }
-
-    public Func<BuildParameters, bool> DeployToCIFeed { get; set; }
-    public Func<BuildParameters, bool> DeployToRCFeed { get; set; }
-    public Func<BuildParameters, bool> DeployToProdFeed { get; set; }
-
-    // TODO: DotNetSettings
-    public bool UseSystemDotNetPath { get; set; }
-    public string DotNetCliInstallScriptUrl { get; set; }
-    public string DotNetCliBranch { get; set; }
-    public string DotNetCliChannel { get; set; }
-    public string DotNetCliVersion { get; set; }
 }

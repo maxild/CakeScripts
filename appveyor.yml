@@ -1,4 +1,6 @@
 environment:
+  github_access_token:
+    secure: zQQEhxL1AYm9ruLnKXrKaQjH7XHc43PtnVuvcHQuPGmsAplXMvHmo+wCieGTyP9j
   deployment_api_key:
     secure: EOVLFyiHRhh9Jij3/mITdSV5JH1SzT8JUbqqTIFtvOPndNeMme3mME01ws3+5nFB
 
