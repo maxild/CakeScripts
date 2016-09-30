@@ -114,7 +114,7 @@ Task("Upload-AppVeyor-Artifacts")
 
 Task("Publish-Packages")
     .IsDependentOn("Package")
-    .WithCriteria(() => parameters.DeployToProdFeed)
+    .WithCriteria(() => parameters.ShouldDeployToProdFeed)
     .WithCriteria(() => DirectoryExists(parameters.Paths.Directories.Artifacts))
     .Does(() =>
 {
@@ -145,31 +145,31 @@ Task("Publish-Packages")
 // Release Management on GitHub: issues, tags and milestones.
 //
 // The standard workflow:
-// For example, it is expected that the release notes will not be generated until you 
-// are literally at the point that the release is going to happen. i.e. you have closed 
-// all the issues, you have merged all the feature branches, etc. Then you run GitReleaseManager, 
-// make sure the notes are what you expect, and then you would publish the release, 
+// For example, it is expected that the release notes will not be generated until you
+// are literally at the point that the release is going to happen. i.e. you have closed
+// all the issues, you have merged all the feature branches, etc. Then you run GitReleaseManager,
+// make sure the notes are what you expect, and then you would publish the release,
 // which could then potentially run your deployment as a result of finalising the release.
 
 // Merge commit on master is created from release/hotfix branch. This is pushed to GitHub,
-// and it triggers the 'Master' build at AppVeyor. I then check that this worked, and I am 
-// happy with the release and the notes. Then, through the GitHub Web UI, I publish the release, 
-// which adds the tag. This triggers the 'TagPush' build at AppVeyor. However, since this is a 
+// and it triggers the 'Master' build at AppVeyor. I then check that this worked, and I am
+// happy with the release and the notes. Then, through the GitHub Web UI, I publish the release,
+// which adds the tag. This triggers the 'TagPush' build at AppVeyor. However, since this is a
 // tagged build, it doesn't create a new release, it updates the existing one.
-// 
-// When a GitHub release is first created, it is created as a draft release. As an admin on 
-// the repo, you can click "Edit" on the draft release, and there is a button at the bottom 
-// of the screen that opens up which is "Publish Release". That then adds the tag to the repo, 
+//
+// When a GitHub release is first created, it is created as a draft release. As an admin on
+// the repo, you can click "Edit" on the draft release, and there is a button at the bottom
+// of the screen that opens up which is "Publish Release". That then adds the tag to the repo,
 // and triggers the 'TagPush' build in AppVeyor.
 //
 // 2: So I guess your cake script does NOT invoke GitReleaseManagerCreate?
 // 1: Not directly, no. That is something that I want to do only when I know I am ready. That
 //    is the Create-Release-Notes task is invoked as a primary target locally on my machine, _after_
-//    pushing the merge commit on master to GitHub. Otherwise, how would I know that I am ready 
+//    pushing the merge commit on master to GitHub. Otherwise, how would I know that I am ready
 //    for a release to happen?
-//    To be more precise, _after_ I have pushed master to GitHub, when I am ready to create a release, 
-//    I do '.\build.ps1 -target releasenotes' locally, which creates the (draft) release notes on 
-//    GitHub.  
+//    To be more precise, _after_ I have pushed master to GitHub, when I am ready to create a release,
+//    I do '.\build.ps1 -target releasenotes' locally, which creates the (draft) release notes on
+//    GitHub.
 
 // Create a draft set of release notes based on a milestone, which has been set up in GitHub.
 // Using the generated milestone (=version), create a draft release on GitHub
@@ -182,13 +182,13 @@ Task("CreateGitHubReleaseNotes")
     //    -milestone $script:version -targetDirectory $rootDirectory -targetcommitish master
     //    -u GitHubUserName -p GitHubPassword
     //    -o repoOwner -r repoName
-    // Note: Once you have an access token, you can enter it instead of your password 
+    // Note: Once you have an access token, you can enter it instead of your password
     //       when performing Git operations over HTTPS.
     // Note: Select the scopes you wish to grant to this access token (scope should be 'repo').
-    // Note: Remember to keep your tokens secret; treat them just like passwords! They act on 
+    // Note: Remember to keep your tokens secret; treat them just like passwords! They act on
     //       your behalf when interacting with the API. Don't hardcode them into your programs.
     //       Instead, opt to use them as environment variables.
-    // Note: Scopes limit access for OAuth tokens. They do not grant any additional permission 
+    // Note: Scopes limit access for OAuth tokens. They do not grant any additional permission
     //       beyond that which the user already has.
     //       curl -H "Authorization: token OAUTH-TOKEN" https://api.github.com/users/maxild -I
     //       See also: https://developer.github.com/v3/oauth/#scopes
@@ -203,7 +203,7 @@ Task("CreateGitHubReleaseNotes")
             TargetCommitish   = "master" // The commit/branch to tag (Choose an existing tag, or create a new tag on publish)
         });
     // Note: Users with push access to the repository can create/edit/delete a release.
-    // Note: Information about published releases are available to everyone. Only users with 
+    // Note: Information about published releases are available to everyone. Only users with
     //       push access will receive listings for draft releases.
     // Note: GitHub releases can be deleted later on..
 });
@@ -216,24 +216,24 @@ Task("CreateGitHubReleaseNotes")
 //    this time with deployment to ProdFeed.
 
 // About exporting release notes to nuspec (nuget package):
-// 1: GRM has the concept of an export command, which will take the generated release notes from 
-// the GitHub release and place them into a markdown format, but that workflow requires the 
-// GitHub Release to be created in the first place. In this workflow, GitHub releases are the 
+// 1: GRM has the concept of an export command, which will take the generated release notes from
+// the GitHub release and place them into a markdown format, but that workflow requires the
+// GitHub Release to be created in the first place. In this workflow, GitHub releases are the
 // single source of truth.
-// 2: But it would be neat to have it operate in an “upcoming milestone mode” for notes export, 
+// 2: But it would be neat to have it operate in an “upcoming milestone mode” for notes export,
 // where it only exported what would end up in an upcoming release.
-// 1: Yes, exporting the notes from a single milestone is something that I have thought about adding, 
+// 1: Yes, exporting the notes from a single milestone is something that I have thought about adding,
 // rather than everything. I would be happy for you to create an issue to that effect.
 // 2: I have never used milestones on GitHub before. Is that a prerequisite for GRM to operate (at all)?
-// 1: Yes, milestones are a pre-requisite, unless you use something like GitReleaseNotes to 
+// 1: Yes, milestones are a pre-requisite, unless you use something like GitReleaseNotes to
 // generate the release notes, which would then be passed into GitReleaseManager as an input parameter.
-// 1: There is a distinction between what I think you are calling a release (=deployment), and what 
-// GRM calls a release. In GRM a release is a created entry in GitHub, where the notes are created 
+// 1: There is a distinction between what I think you are calling a release (=deployment), and what
+// GRM calls a release. In GRM a release is a created entry in GitHub, where the notes are created
 // either from release notes passed in, or created from milestone issues in GitHub.
-// 2: So it’s not possible to just have the notes be generated from the last tag, almost like how 
+// 2: So it’s not possible to just have the notes be generated from the last tag, almost like how
 // GitVersion operates?
-// 1: Yes, you can, but that would be using the GitReleaseNotes tool, not GitReleaseManager. One 
-// creates the releasenotes (GitReleaseNotes) and another creates the release (GitReleaseManager) 
+// 1: Yes, you can, but that would be using the GitReleaseNotes tool, not GitReleaseManager. One
+// creates the releasenotes (GitReleaseNotes) and another creates the release (GitReleaseManager)
 // using the notes that are either passed in, or generated from milestone issues. again, two separate
 // functions.
 
@@ -284,8 +284,8 @@ Task("CloseMilestone")
 Task("Create-Release-Notes")
     .Does(() =>
 {
-    GitReleaseManagerCreate(parameters.GitHub.UserName, parameters.GitHub.Password,  parameters.Git.RepositoryOwner, parameters.Git.RepositoryName, 
-        new GitReleaseManagerCreateSettings 
+    GitReleaseManagerCreate(parameters.GitHub.UserName, parameters.GitHub.Password,  parameters.Git.RepositoryOwner, parameters.Git.RepositoryName,
+        new GitReleaseManagerCreateSettings
         {
             Milestone         = parameters.VersionInfo.Milestone,
             Name              = parameters.VersionInfo.Milestone,
@@ -297,7 +297,7 @@ Task("Create-Release-Notes")
 // Invoked on AppVeyor, when tag is pushed ('Publish Release' on GitHub Web UI)
 Task("Publish-GitHub-Release")
     .IsDependentOn("Package")
-    .WithCriteria(() => parameters.DeployToProdFeed) // Tag push of commit on master branch on AppVeyor
+    .WithCriteria(() => parameters.ShouldDeployToProdFeed)
     .Does(() =>
 {
     if (DirectoryExists(parameters.Paths.Directories.Artifacts))

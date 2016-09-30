@@ -11,7 +11,6 @@ public class BuildParameters
         _context = context;
         _settings = settings;
         _deployToCIFeedFunc = settings.DeployToCIFeed ?? DefaultDeployToCIFeed;
-        _deployToRCFeedFunc = settings.DeployToRCFeed ?? DefaultDeployToRCFeed;
         _deployToProdFeedFunc = settings.DeployToProdFeed ?? DefaultDeployToProdFeed;
     }
 
@@ -22,19 +21,18 @@ public class BuildParameters
     public bool IsRunningOnWindows { get; private set; }
 
     public bool IsMainRepository { get; private set; } // not a fork?
+
+    // AppVeyor variables
     public bool IsLocalBuild { get; private set; }
     public bool IsRunningOnAppVeyor { get; private set; }
     public bool IsPullRequest { get; private set; }
     public bool IsTagPush { get; private set; }
 
-    // Maximum of 3 NuGet feeds can be configured
     public NuGetFeed CIFeed { get; private set; }
-    public NuGetFeed RCFeed { get; private set; }
     public NuGetFeed ProdFeed { get; private set; }
 
-    public bool DeployToCIFeed { get { return DeployToAnyFeed(this) && _deployToCIFeedFunc(this); } }
-    public bool DeployToRCFeed { get { return DeployToAnyFeed(this) && _deployToRCFeedFunc(this); } }
-    public bool DeployToProdFeed { get { return DeployToAnyFeed(this) && _deployToProdFeedFunc(this); } }
+    public bool ShouldDeployToCIFeed { get { return DeployToAnyFeed(this) && _deployToCIFeedFunc(this); } }
+    public bool ShouldDeployToProdFeed { get { return DeployToAnyFeed(this) && _deployToProdFeedFunc(this); } }
 
     static bool DeployToAnyFeed(BuildParameters parameters)
     {
@@ -45,24 +43,14 @@ public class BuildParameters
 
     static bool DefaultDeployToCIFeed(BuildParameters parameters)
     {
-        // We are running on appveyor and neither master or 'support/x.y.z' branches are built by a commit push
-        // Probably we are building feature, develop, release or hotfix branch.
-        return false == parameters.Git.IsReleaseLineBranch &&
-               false == parameters.IsTagPush;
-    }
-
-    static bool DefaultDeployToRCFeed(BuildParameters parameters)
-    {
-        // We are running on appveyor and the and master or 'support/x.y' branch is built because of a tag push
-        return false == parameters.Git.IsReleaseLineBranch &&
-               parameters.IsTagPush;
+        // Either a tag or a commit of any branch except master and 'support/x.y.z' have been pushed to GitHub
+        return parameters.IsTagPush || false == parameters.Git.IsReleaseLineBranch;
     }
 
     static bool DefaultDeployToProdFeed(BuildParameters parameters)
     {
-        // We are running on appveyor and master or 'support/x.y' branch is built because of a tag push
-        return parameters.Git.IsReleaseLineBranch &&
-               parameters.IsTagPush;
+        // A tag on either master or 'support/x.y' have been pushed to GitHub
+        return parameters.IsTagPush && parameters.Git.IsReleaseLineBranch;
     }
 
     public Credentials GitHub { get; private set; }
@@ -115,22 +103,20 @@ public class BuildParameters
 
     public void PrintToLog()
     {
-        _context.Information("Target:              {0}", Target);
-        _context.Information("Configuration:       {0}", Configuration);
-        _context.Information("IsRunningOnWindows:  {0}", IsRunningOnWindows);
-        _context.Information("IsRunningOnUnix:     {0}", IsRunningOnUnix);
-        _context.Information("IsMainRepository:    {0}", IsMainRepository);
-        _context.Information("IsLocalBuild:        {0}", IsLocalBuild);
-        _context.Information("IsRunningOnAppVeyor: {0}", IsRunningOnAppVeyor);
-        _context.Information("IsPullRequest:       {0}", IsPullRequest);
-        _context.Information("IsTagPush:           {0}", IsTagPush);
-        _context.Information("GitHub.UserName:     {0}", GitHub.UserName);
-        _context.Information("CIFeed:              {0}", CIFeed.SourceUrl);
-        _context.Information("DeployToCIFeed:      {0}", DeployToCIFeed);
-        _context.Information("RCFeed:              {0}", RCFeed.SourceUrl);
-        _context.Information("DeployToRCFeed:      {0}", DeployToRCFeed);
-        _context.Information("ProdFeed:            {0}", ProdFeed.SourceUrl);
-        _context.Information("DeployToProdFeed:    {0}", DeployToProdFeed);
+        _context.Information("Target:                 {0}", Target);
+        _context.Information("Configuration:          {0}", Configuration);
+        _context.Information("IsRunningOnWindows:     {0}", IsRunningOnWindows);
+        _context.Information("IsRunningOnUnix:        {0}", IsRunningOnUnix);
+        _context.Information("IsMainRepository:       {0}", IsMainRepository);
+        _context.Information("IsLocalBuild:           {0}", IsLocalBuild);
+        _context.Information("IsRunningOnAppVeyor:    {0}", IsRunningOnAppVeyor);
+        _context.Information("IsPullRequest:          {0}", IsPullRequest);
+        _context.Information("IsTagPush:              {0}", IsTagPush);
+        _context.Information("GitHub.UserName:        {0}", GitHub.UserName);
+        _context.Information("CIFeed:                 {0}", CIFeed.SourceUrl);
+        _context.Information("ShouldDeployToCIFeed:   {0}", ShouldDeployToCIFeed);
+        _context.Information("ProdFeed:               {0}", ProdFeed.SourceUrl);
+        _context.Information("ShouldDeployToProdFeed: {0}", ShouldDeployToProdFeed);
 
         VersionInfo.PrintToLog();
         Git.PrintToLog();
@@ -223,7 +209,7 @@ public class BuildParameters
             IsLocalBuild = buildSystem.IsLocalBuild,
             // AppVeyor build system wraps appveyor env vars
             IsRunningOnAppVeyor = buildSystem.AppVeyor.IsRunningOnAppVeyor,
-            IsPullRequest = buildSystem.AppVeyor.Environment.PullRequest.IsPullRequest, // TODO: IsPullRequestBranch
+            IsPullRequest = buildSystem.AppVeyor.Environment.PullRequest.IsPullRequest,
             IsTagPush = (
                 buildSystem.AppVeyor.Environment.Repository.Tag.IsTag &&
                 !string.IsNullOrWhiteSpace(buildSystem.AppVeyor.Environment.Repository.Tag.Name)
@@ -232,10 +218,6 @@ public class BuildParameters
             CIFeed = new NuGetFeed(
                 apiKey: context.EnvironmentVariable(settings.DeployToCIApiKeyVariable), // secret
                 sourceUrl: settings.DeployToCISourceUrl ?? context.EnvironmentVariable(settings.DeployToCISourceUrlVariable)
-            ),
-            RCFeed = new NuGetFeed(
-                apiKey: context.EnvironmentVariable(settings.DeployToRCApiKeyVariable), // secret
-                sourceUrl: settings.DeployToRCSourceUrl ?? context.EnvironmentVariable(settings.DeployToRCSourceUrlVariable)
             ),
             ProdFeed = new NuGetFeed(
                 apiKey: context.EnvironmentVariable(settings.DeployToProdApiKeyVariable), // secret
