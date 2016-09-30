@@ -2,12 +2,12 @@
 public class GitRepoInfo
 {
     // GitFlow branching naming conventions and conventional PR branch naming
-    const string FeatureBranchRegex          = @"^features?[/-]";
-    const string HotfixBranchRegex           = @"^hotfix(es)?[/-]";
-    const string ReleaseCandidateBranchRegex = @"^releases?[/-]";
     const string DevelopBranchRegex          = @"^dev(elop)?$";
     const string MasterBranchRegex           = @"^master$";
-    const string SupportBranchRegex          = @"^support[/-]";
+    const string FeatureBranchRegex          = @"^features?/";
+    const string HotfixBranchRegex           = @"^hotfix(es)?/";
+    const string ReleaseCandidateBranchRegex = @"^releases?/(0|[1-9]\d*)[.](0|[1-9]\d*)([.](0|[1-9]\d*))?"; // release/major.minor[.patch]
+    const string SupportBranchRegex          = @"^support/(0|[1-9]\d*)[.](x|0|[1-9]\d*)";                   // support/1.2.x, support/1.x
     const string PullRequestBranchRegex      = @"(pull|pull\-requests|pr)[/-]";
 
     private readonly ICakeContext _context;
@@ -36,6 +36,9 @@ public class GitRepoInfo
     public bool IsMasterBranch { get; private set; }
     public bool IsSupportBranch { get; private set; }
     public bool IsPullRequestBranch { get; private set; }
+
+    // GitFlow has 2 kind of release line branches with merge-commits from release/hotfix that are tagged.
+    public bool IsReleaseLineBranch { get { return IsMasterBranch || IsSupportBranch; } }
 
     // git tag -l --points-at HEAD
     public string Tag { get; private set; }

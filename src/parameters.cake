@@ -45,22 +45,23 @@ public class BuildParameters
 
     static bool DefaultDeployToCIFeed(BuildParameters parameters)
     {
-        // We are running on appveyor and all other than master branch is built by a commit push
-        return false == parameters.Git.IsMasterBranch &&
+        // We are running on appveyor and neither master or 'support/x.y.z' branches are built by a commit push
+        // Probably we are building feature, develop, release or hotfix branch.
+        return false == parameters.Git.IsReleaseLineBranch &&
                false == parameters.IsTagPush;
     }
 
     static bool DefaultDeployToRCFeed(BuildParameters parameters)
     {
-        // We are running on appveyor and the master branch is built because of a tag push
-        return false == parameters.Git.IsMasterBranch &&
+        // We are running on appveyor and the and master or 'support/x.y' branch is built because of a tag push
+        return false == parameters.Git.IsReleaseLineBranch &&
                parameters.IsTagPush;
     }
 
     static bool DefaultDeployToProdFeed(BuildParameters parameters)
     {
-        // We are running on appveyor and the master branch is built because of a tag push
-        return parameters.Git.IsMasterBranch &&
+        // We are running on appveyor and master or 'support/x.y' branch is built because of a tag push
+        return parameters.Git.IsReleaseLineBranch &&
                parameters.IsTagPush;
     }
 
