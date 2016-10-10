@@ -22,7 +22,7 @@ var parameters = BuildParameters.GetParameters(
     new BuildSettings   // My personal overrides
     {
         DeployToProdFeed = _ => true,
-        DeployToProdSourceUrl = @"https://www.myget.org/F/maxfire/api/v2/package"
+        DeployToProdFeedUrl = @"https://www.myget.org/F/maxfire/api/v2/package"
     },
     new BuildPathSettings
     {

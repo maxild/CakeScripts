@@ -9,15 +9,17 @@ public class BuildSettings
         set { _repositoryOwner = value; }
     }
 
-    public string RepositoryName { get; set;}
-    public string GitHubUserName { get; set; }
+    public string RepositoryName { get; set; }
 
-    public string DeployToCISourceUrl { get; set; }
-    public string DeployToRCSourceUrl { get; set; }
-    public string DeployToProdSourceUrl { get; set; }
+    // The following 4 settings can either be configured directly
+    // (in build.cake) through the below setters or configured 
+    // (in appveyor.yml) through environment variables.
+    public string GitHubUserName { get; set; }
+    public string MyGetUserName  { get; set; }
+    public string DeployToCIFeedUrl { get; set; }
+    public string DeployToProdFeedUrl { get; set; }
 
     public Func<BuildParameters, bool> DeployToCIFeed { get; set; }
-    public Func<BuildParameters, bool> DeployToRCFeed { get; set; }
     public Func<BuildParameters, bool> DeployToProdFeed { get; set; }
 
     public bool UseSystemDotNetPath { get; set; }
@@ -33,12 +35,13 @@ public class BuildSettings
     // default names
     const string GITHUB_PASSWORD           = "GITHUB_PASSWORD";
     const string GITHUB_USERNAME           = "GITHUB_USERNAME";
-    const string CI_DEPLOYMENT_API_KEY     = "CI_DEPLOYMENT_API_KEY";
-    const string CI_DEPLOYMENT_SOURCE_URL  = "CI_DEPLOYMENT_SOURCE_URL";
-    const string RC_DEPLOYMENT_API_KEY     = "RC_DEPLOYMENT_API_KEY";
-    const string RC_DEPLOYMENT_SOURCE_URL  = "RC_DEPLOYMENT_SOURCE_URL";
-    const string DEPLOYMENT_API_KEY        = "DEPLOYMENT_API_KEY";
-    const string DEPLOYMENT_SOURCE_URL     = "DEPLOYMENT_SOURCE_URL";
+    const string MYGET_PASSWORD            = "MYGET_PASSWORD";
+    const string MYGET_USERNAME            = "MYGET_USERNAME";
+
+    const string CI_DEPLOYMENT_API_KEY        = "CI_DEPLOYMENT_API_KEY";
+    const string CI_DEPLOYMENT_FEED_URL       = "CI_DEPLOYMENT_FEED_URL";
+    const string PROD_DEPLOYMENT_API_KEY      = "DEPLOYMENT_API_KEY";
+    const string PROD_DEPLOYMENT_FEED_URL     = "DEPLOYMENT_FEED_URL";
 
     private string _gitHubUserNameVariable;
     public string GitHubUserNameVariable
@@ -54,11 +57,25 @@ public class BuildSettings
         set { _gitHubPasswordVariable = value; }
     }
 
-    private string _cIDeploymentSourceUrlVariable;
-    public string DeployToCISourceUrlVariable
+    private string _myGetUserNameVariable;
+    public string MyGetUserNameVariable
     {
-        get { return _cIDeploymentSourceUrlVariable ?? CI_DEPLOYMENT_SOURCE_URL; }
-        set { _cIDeploymentSourceUrlVariable = value; }
+        get { return _myGetUserNameVariable ?? MYGET_USERNAME; }
+        set { _myGetUserNameVariable = value; }
+    }
+
+    private string _myGetPasswordVariable;
+    public string MyGetPasswordVariable
+    {
+        get { return _myGetPasswordVariable ?? MYGET_PASSWORD; }
+        set { _myGetPasswordVariable = value; }
+    }
+
+    private string _cIDeploymentFeedUrlVariable;
+    public string DeployToCIFeedUrlVariable
+    {
+        get { return _cIDeploymentFeedUrlVariable ?? CI_DEPLOYMENT_FEED_URL; }
+        set { _cIDeploymentFeedUrlVariable = value; }
     }
 
     private string _cIDeploymentApiKeyVariable;
@@ -68,31 +85,17 @@ public class BuildSettings
         set { _cIDeploymentApiKeyVariable = value; }
     }
 
-    private string _rCDeploymentSourceUrlVariable;
-    public string DeployToRCSourceUrlVariable
+    private string _prodDeploymentFeedUrlVariable;
+    public string DeployToProdFeedUrlVariable
     {
-        get { return _rCDeploymentSourceUrlVariable ?? RC_DEPLOYMENT_SOURCE_URL; }
-        set { _rCDeploymentSourceUrlVariable = value; }
-    }
-
-    private string _rCDeploymentApiKeyVariable;
-    public string DeployToRCApiKeyVariable
-    {
-        get { return _rCDeploymentApiKeyVariable ?? RC_DEPLOYMENT_API_KEY; }
-        set { _rCDeploymentApiKeyVariable = value; }
-    }
-
-    private string _prodDeploymentSourceUrlVariable;
-    public string DeployToProdSourceUrlVariable
-    {
-        get { return _prodDeploymentSourceUrlVariable ?? DEPLOYMENT_SOURCE_URL; }
-        set { _prodDeploymentSourceUrlVariable = value; }
+        get { return _prodDeploymentFeedUrlVariable ?? PROD_DEPLOYMENT_FEED_URL; }
+        set { _prodDeploymentFeedUrlVariable = value; }
     }
 
     private string _prodDeploymentApiKeyVariable;
     public string DeployToProdApiKeyVariable
     {
-        get { return _prodDeploymentApiKeyVariable ?? DEPLOYMENT_API_KEY; }
+        get { return _prodDeploymentApiKeyVariable ?? PROD_DEPLOYMENT_API_KEY; }
         set { _prodDeploymentApiKeyVariable = value; }
     }
 }

@@ -49,11 +49,14 @@ public class BuildParameters
 
     static bool DefaultDeployToProdFeed(BuildParameters parameters)
     {
+
         // A tag on either master or 'support/x.y' have been pushed to GitHub
         return parameters.IsTagPush && parameters.Git.IsReleaseLineBranch;
     }
 
     public Credentials GitHub { get; private set; }
+
+    public Credentials MyGet { get; private set; }
 
     public ProjectInfo Project { get; private set; }
 
@@ -113,6 +116,7 @@ public class BuildParameters
         _context.Information("IsPullRequest:          {0}", IsPullRequest);
         _context.Information("IsTagPush:              {0}", IsTagPush);
         _context.Information("GitHub.UserName:        {0}", GitHub.UserName);
+        _context.Information("MyGet.UserName:         {0}", MyGet.UserName);
         _context.Information("CIFeed:                 {0}", CIFeed.SourceUrl);
         _context.Information("ShouldDeployToCIFeed:   {0}", ShouldDeployToCIFeed);
         _context.Information("ProdFeed:               {0}", ProdFeed.SourceUrl);
@@ -216,17 +220,22 @@ public class BuildParameters
             ),
 
             CIFeed = new NuGetFeed(
-                apiKey: context.EnvironmentVariable(settings.DeployToCIApiKeyVariable), // secret
-                sourceUrl: settings.DeployToCISourceUrl ?? context.EnvironmentVariable(settings.DeployToCISourceUrlVariable)
+                sourceUrl: settings.DeployToCIFeedUrl ?? context.EnvironmentVariable(settings.DeployToCIFeedUrlVariable),
+                apiKey: context.EnvironmentVariable(settings.DeployToCIApiKeyVariable) // secret
             ),
             ProdFeed = new NuGetFeed(
-                apiKey: context.EnvironmentVariable(settings.DeployToProdApiKeyVariable), // secret
-                sourceUrl: settings.DeployToProdSourceUrl ?? context.EnvironmentVariable(settings.DeployToProdSourceUrlVariable)
+                sourceUrl: settings.DeployToProdFeedUrl ?? context.EnvironmentVariable(settings.DeployToProdFeedUrlVariable),
+                apiKey: context.EnvironmentVariable(settings.DeployToProdApiKeyVariable) // secret
             ),
 
             GitHub = new Credentials(
                 userName: settings.GitHubUserName ?? context.EnvironmentVariable(settings.GitHubUserNameVariable) ?? settings.RepositoryOwner,
-                password: context.EnvironmentVariable(settings.GitHubPasswordVariable)
+                password: context.EnvironmentVariable(settings.GitHubPasswordVariable) // secret
+            ),
+
+            MyGet = new Credentials(
+                userName: settings.MyGetUserName ?? context.EnvironmentVariable(settings.MyGetUserNameVariable),
+                password: context.EnvironmentVariable(settings.MyGetPasswordVariable) //secret
             ),
 
             VersionInfo = versionInfo,
@@ -238,13 +247,13 @@ public class BuildParameters
 
     public class NuGetFeed
     {
-        public string ApiKey { get; private set; }
         public string SourceUrl { get; private set; }
+        public string ApiKey { get; private set; }
 
-        public NuGetFeed(string apiKey, string sourceUrl)
+        public NuGetFeed(string sourceUrl, string apiKey)
         {
-            ApiKey = apiKey;
             SourceUrl = sourceUrl;
+            ApiKey = apiKey;
         }
     }
 
