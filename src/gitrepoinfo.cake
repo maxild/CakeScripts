@@ -45,29 +45,6 @@ public class GitRepoInfo
 
     public bool IsTag { get { return false == string.IsNullOrEmpty(Tag); } }
 
-    // git remote get-url origin
-    public string RepositoryOwner { get; private set; }
-    public string RepositoryName { get; private set; }
-
-    public bool IsRemoteEqualToRepoSettings(BuildSettings settings)
-    {
-        if (settings == null)
-        {
-            throw new ArgumentNullException("settings");
-        }
-
-        bool sameOwner = RepositoryOwner.Equals(settings.RepositoryOwner, StringComparison.OrdinalIgnoreCase);
-
-        if (string.IsNullOrEmpty(settings.RepositoryName))
-        {
-            return sameOwner;
-        }
-
-        bool sameName = RepositoryName.Equals(settings.RepositoryName, StringComparison.OrdinalIgnoreCase);
-
-        return sameOwner && sameName;
-    }
-
     public void PrintToLog()
     {
         _context.Information("GIT Repository Information:");
@@ -84,15 +61,17 @@ public class GitRepoInfo
         _context.Information("  IsPullRequestBranch:      {0}", IsPullRequestBranch);
         _context.Information("  Tag:                      {0}", Tag);
         _context.Information("  IsTag:                    {0}", IsTag);
-        _context.Information("  RepositoryOwner:          {0}", RepositoryOwner);
-        _context.Information("  RepositoryName:           {0}", RepositoryName);
     }
 
-    public static GitRepoInfo Calculate(ICakeContext context)
+    public static GitRepoInfo Calculate(ICakeContext context, BuildSettings settings)
     {
         if (context == null)
         {
             throw new ArgumentNullException("context");
+        }
+        if (settings == null)
+        {
+            throw new ArgumentNullException("settings");
         }
 
         // using env var PATH
@@ -110,23 +89,6 @@ public class GitRepoInfo
         string[] tags = git.Command("tag -l --points-at HEAD").Split(SEP);
         string tag = tags.Length > 0 ? tags[0] : string.Empty;
 
-        string remoteUrl = git.Command("remote get-url origin");  // https://github.com/maxild/CakeScripts.git
-        string[] remoteUrlSegments = new Uri(remoteUrl).Segments; // [ "/", "maxild/", "CakeScripts.git" ]
-
-        string repoOwner, repoName;
-        if (remoteUrlSegments.Length != 3)
-        {
-            // TODO: Maybe throw exception
-            context.Warning("Unable to resolve RepositoryOwner and RepositoryName from remote url '{0}'");
-            repoOwner = string.Empty;
-            repoName = string.Empty;
-        }
-        else
-        {
-            repoOwner = remoteUrlSegments[1].TrimEnd('/');
-            repoName = StringUtils.TrimEnd(remoteUrlSegments[2], ".git");
-        }
-
         return new GitRepoInfo(context)
         {
             Sha = git.Command("rev-parse --verify HEAD"),
@@ -140,44 +102,7 @@ public class GitRepoInfo
             IsMasterBranch = System.Text.RegularExpressions.Regex.IsMatch(branch, MasterBranchRegex, System.Text.RegularExpressions.RegexOptions.IgnoreCase),
             IsSupportBranch = System.Text.RegularExpressions.Regex.IsMatch(branch, SupportBranchRegex, System.Text.RegularExpressions.RegexOptions.IgnoreCase),
             IsPullRequestBranch = System.Text.RegularExpressions.Regex.IsMatch(branch, PullRequestBranchRegex, System.Text.RegularExpressions.RegexOptions.IgnoreCase),
-            Tag = tag,
-            RepositoryOwner = repoOwner,
-            RepositoryName = repoName
+            Tag = tag
         };
-    }
-
-    public class GitExec
-    {
-        private readonly ICakeContext _context;
-        private readonly string _gitPath;
-        private readonly char _newLineToken;
-
-        public GitExec(ICakeContext context, char newLineToken)
-        {
-            _context = context;
-            var path = context.Tools.Resolve("git.exe").FullPath;
-            if (string.IsNullOrEmpty(path))
-            {
-                throw new InvalidOperationException("Cake could not resolve the PATH to git.exe");
-            }
-            Path = path;
-            _newLineToken = newLineToken;
-        }
-
-        public string Path { get; private set; }
-
-        // TODO: Move to runhelpers.cake (where stdout capturing command is missing)
-        public string Command(string arguments)
-        {
-            //_context.Information("git {0}", arguments);
-            IEnumerable<string> stdout;
-            int exit = _context.StartProcess(Path, new ProcessSettings {
-                Arguments = arguments,
-                RedirectStandardOutput = true,
-            }, out stdout);
-            string result = exit == 0 ? (string.Join(_newLineToken.ToString(), stdout) ?? string.Empty).Trim() : string.Empty;
-            //_context.Information("git {0} --> {1}", arguments, result);
-            return result;
-        }
     }
 }

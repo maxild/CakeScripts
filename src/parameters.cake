@@ -54,7 +54,7 @@ public class BuildParameters
         return parameters.IsTagPush && parameters.Git.IsReleaseLineBranch;
     }
 
-    public Credentials GitHub { get; private set; }
+    public GitHubRepositoryAndCredentials GitHub { get; private set; }
 
     public Credentials MyGet { get; private set; }
 
@@ -115,15 +115,15 @@ public class BuildParameters
         _context.Information("IsRunningOnAppVeyor:    {0}", IsRunningOnAppVeyor);
         _context.Information("IsPullRequest:          {0}", IsPullRequest);
         _context.Information("IsTagPush:              {0}", IsTagPush);
-        _context.Information("GitHub.UserName:        {0}", GitHub.UserName);
         _context.Information("MyGet.UserName:         {0}", MyGet.UserName);
         _context.Information("CIFeed:                 {0}", CIFeed.SourceUrl);
         _context.Information("ShouldDeployToCIFeed:   {0}", ShouldDeployToCIFeed);
         _context.Information("ProdFeed:               {0}", ProdFeed.SourceUrl);
         _context.Information("ShouldDeployToProdFeed: {0}", ShouldDeployToProdFeed);
 
-        VersionInfo.PrintToLog();
+        GitHub.PrintToLog();
         Git.PrintToLog();
+        VersionInfo.PrintToLog();
         Paths.PrintToLog();
     }
 
@@ -190,14 +190,22 @@ public class BuildParameters
             throw new ArgumentNullException("settings");
         }
 
+        var gitHubCredentials = new Credentials(
+            userName: settings.GitHubUserName ?? context.EnvironmentVariable(settings.GitHubUserNameVariable) ?? settings.MainRepositoryOwner,
+            password: context.EnvironmentVariable(settings.GitHubPasswordVariable) // secret
+        );
+
+        // Resolve repositoryOwner, repositoryName and whether or not remote url is https:// based
+        var gitHubRepository = GitHubRepository.Calculate(context);
+
         // GitVersion will patch current branch (HEAD) on appveyor, therefore
         // we have to execute the gitVersion tool before....
-        var versionInfo = GitVersionInfo.Calculate(context, buildSystem);
+        var versionInfo = GitVersionInfo.Calculate(context, buildSystem, gitHubCredentials, gitHubRepository);
         // ... executing any git commands like 'git rev-parse HEAD'
-        var repoInfo = GitRepoInfo.Calculate(context);
+        var repoInfo = GitRepoInfo.Calculate(context, settings);
 
         var configuration = context.Argument("configuration", "Release");
-        var projectInfo = new ProjectInfo(context, settings, repoInfo);
+        var projectInfo = new ProjectInfo(context, settings, gitHubRepository);
 
         return new BuildParameters(context, settings)
         {
@@ -207,7 +215,7 @@ public class BuildParameters
             IsRunningOnUnix = context.IsRunningOnUnix(),
             IsRunningOnWindows = context.IsRunningOnWindows(),
 
-            IsMainRepository = repoInfo.IsRemoteEqualToRepoSettings(settings),
+            IsMainRepository = gitHubRepository.IsEqualToMainRepository(settings),
 
             // Build system...
             IsLocalBuild = buildSystem.IsLocalBuild,
@@ -228,9 +236,15 @@ public class BuildParameters
                 apiKey: context.EnvironmentVariable(settings.DeployToProdApiKeyVariable) // secret
             ),
 
-            GitHub = new Credentials(
-                userName: settings.GitHubUserName ?? context.EnvironmentVariable(settings.GitHubUserNameVariable) ?? settings.RepositoryOwner,
-                password: context.EnvironmentVariable(settings.GitHubPasswordVariable) // secret
+            GitHub = new GitHubRepositoryAndCredentials(
+                context,
+                repo: gitHubRepository,
+                main: new GitHubRepository(
+                    context,
+                    owner: settings.MainRepositoryOwner,
+                    name: settings.RepositoryName,
+                    hasHttpsUrl: true),
+                credentials: gitHubCredentials
             ),
 
             MyGet = new Credentials(
@@ -257,16 +271,57 @@ public class BuildParameters
         }
     }
 
-    public class Credentials
+    public class GitHubRepositoryAndCredentials
     {
-        public string UserName { get; private set; }
-        public string Password { get; private set; }
+        private readonly GitHubRepository _repo;
+        private readonly GitHubRepository _main;
+        private readonly Credentials _credentials;
+        private readonly ICakeContext _context;
 
-        public Credentials(string userName, string password)
+        public GitHubRepositoryAndCredentials(
+            ICakeContext context,
+            GitHubRepository repo,
+            GitHubRepository main,
+            Credentials credentials)
         {
-            UserName = userName;
-            Password = password;
+            _context = context;
+            _repo = repo;
+            _main = main;
+            _credentials = credentials;
         }
+
+        public string UserName { get { return _credentials.UserName; } }
+        public string Password { get { return _credentials.Password; } }
+        public string MainRepositoryOwner { get { return _main.Owner; } }
+        public string MainRepositoryName { get { return _main.Name; } }
+        public string RepositoryOwner { get { return _repo.Owner; } }
+        public string RepositoryName { get { return _repo.Name; } }
+        public bool RepositoryHasHttpsUrl { get { return _repo.HasHttpsUrl; } }
+        public string RepositoryHttpsUrl { get { return _repo.HttpsUrl;} }
+
+        public void PrintToLog()
+        {
+            _context.Information("GitHub Information:");
+            _context.Information("  UserName:              {0}", UserName);
+            _context.Information("  MainRepositoryOwner:   {0}", MainRepositoryOwner);
+            _context.Information("  MainRepositoryName:    {0}", MainRepositoryName);
+            _context.Information("  RepositoryOwner:       {0}", RepositoryOwner);
+            _context.Information("  RepositoryName:        {0}", RepositoryName);
+            _context.Information("  RepositoryHasHttpsUrl: {0}", RepositoryHasHttpsUrl);
+            _context.Information("  RepositoryHttpsUrl:    {0}", RepositoryHttpsUrl);
+        }
+    }
+}
+
+public class Credentials
+{
+    public string UserName { get; private set; }
+    public string Password { get; private set; }
+
+    public Credentials(string userName, string password)
+    {
+        UserName = userName;
+        Password = password;
     }
 }
 
@@ -274,7 +329,7 @@ public class ProjectInfo
 {
     private readonly ICakeContext _context;
 
-    public ProjectInfo(ICakeContext context, BuildSettings settings, GitRepoInfo repoInfo)
+    public ProjectInfo(ICakeContext context, BuildSettings settings, GitHubRepository gitHubRepository)
     {
         if (context == null)
         {
@@ -284,7 +339,7 @@ public class ProjectInfo
 
         Name = settings.ProjectName ??
                 settings.RepositoryName ??
-                repoInfo.RepositoryName ?? string.Empty;
+                gitHubRepository.Name ?? string.Empty;
     }
 
     public string Name { get; private set; }

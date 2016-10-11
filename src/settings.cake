@@ -2,8 +2,11 @@ public class BuildSettings
 {
     public string ProjectName { get; set; }
 
+    // The following 2 properties are used to determine
+    // if we are building the main repo or a fork
+
     private string _repositoryOwner;
-    public string RepositoryOwner
+    public string MainRepositoryOwner
     {
         get { return _repositoryOwner ?? "maxild"; }
         set { _repositoryOwner = value; }
@@ -12,7 +15,7 @@ public class BuildSettings
     public string RepositoryName { get; set; }
 
     // The following 4 settings can either be configured directly
-    // (in build.cake) through the below setters or configured 
+    // (in build.cake) through the below setters or configured
     // (in appveyor.yml) through environment variables.
     public string GitHubUserName { get; set; }
     public string MyGetUserName  { get; set; }

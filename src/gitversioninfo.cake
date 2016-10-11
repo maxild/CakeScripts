@@ -37,8 +37,7 @@ public class GitVersionInfo
 
     public string SemVer { get; private set; }
 
-    // We do not use 'v' prefix on GitHub milestones (i.e. we use '0.4.0' , not 'v0.4.0').
-    public string Milestone { get { return MajorMinorPatch; } }
+    public string Milestone { get { return string.Format("v{0}", MajorMinorPatch); } }
 
     public string CakeVersion { get; private set; }
 
@@ -56,11 +55,28 @@ public class GitVersionInfo
         _context.Information("  SemVer:                       {0}", SemVer);
     }
 
-    public static GitVersionInfo Calculate(ICakeContext context, BuildSystem buildSystem)
+    public static GitVersionInfo Calculate(
+        ICakeContext context,
+        BuildSystem buildSystem,
+        Credentials gitHubCredentials,
+        GitHubRepository gitHubRepository
+        )
     {
         if (context == null)
         {
             throw new ArgumentNullException("context");
+        }
+        if (buildSystem == null)
+        {
+            throw new ArgumentNullException("buildSystem");
+        }
+        if (gitHubCredentials == null)
+        {
+            throw new ArgumentNullException("gitHubCredentials");
+        }
+        if (gitHubRepository == null)
+        {
+            throw new ArgumentNullException("gitHubRepository");
         }
 
         string majorMinorPatch, pkgVersion, semVer, infoVer;
@@ -72,10 +88,29 @@ public class GitVersionInfo
 
             if (false == buildSystem.IsLocalBuild)
             {
+                // Running on AppVeyor, we have to patch private repos
+                //   GitVersion (i.e. libgit2) doesn't support SSH, so to avoid 'Unsupported URL protocol'
+                //   when GitVersion fetches from the remote, we have to convert to using HTTPS
+                //   See http://help.appveyor.com/discussions/kb/17-getting-gitversion-to-work-with-private-bitbucketgithub-repositories
+
+                if (false == gitHubRepository.HasHttpsUrl)
+                {
+                    // git remote set-url origin https://github.com/OWNER/REPONAME.git
+                    const char SEP = '#';
+                    var git = new GitExec(context, SEP);
+                    git.Command(string.Format("remote set-url origin {0}", gitHubRepository.HttpsUrl));
+                }
+
                 // Running on AppVeyor, we have to patch/setup local tracking branches
                 context.GitVersion(new GitVersionSettings
                 {
-                    OutputType = GitVersionOutput.BuildServer
+                    OutputType = GitVersionOutput.BuildServer,
+                    // Private repos require this to avoid HTTP errors
+                    EnvironmentVariables = new Dictionary<string, string>
+                    {
+                        { "GITVERSION_REMOTE_USERNAME", gitHubCredentials.UserName },
+                        { "GITVERSION_REMOTE_PASSWORD", gitHubCredentials.Password }
+                    }
                 });
 
                 majorMinorPatch = context.EnvironmentVariable("GitVersion_MajorMinorPatch");

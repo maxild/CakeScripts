@@ -7,6 +7,8 @@
 // SCRIPTS
 ///////////////////////////////////////////////////////////////////////////////
 #load "src/utils.cake"
+#load "src/gitexec.cake"
+#load "src/githubrepository.cake"
 #load "src/gitversioninfo.cake"
 #load "src/gitrepoinfo.cake"
 #load "src/parameters.cake"
@@ -21,6 +23,8 @@ var parameters = BuildParameters.GetParameters(
     BuildSystem,        // BuildSystem alias
     new BuildSettings   // My personal overrides
     {
+        MainRepositoryOwner = "maxild",
+        RepositoryName = "CakeScripts",
         DeployToProdFeed = _ => true,
         DeployToProdFeedUrl = @"https://www.myget.org/F/maxfire/api/v2/package"
     },
@@ -193,7 +197,7 @@ Task("CreateGitHubReleaseNotes")
     //       curl -H "Authorization: token OAUTH-TOKEN" https://api.github.com/users/maxild -I
     //       See also: https://developer.github.com/v3/oauth/#scopes
     GitReleaseManagerCreate(parameters.GitHub.UserName, parameters.GitHub.Password,
-                            parameters.Git.RepositoryOwner, parameters.Git.RepositoryName,
+                            parameters.GitHub.RepositoryOwner, parameters.GitHub.RepositoryName,
         // Title
         // Description: is the markdown created by the tool, or imported from another tool.
         new GitReleaseManagerCreateSettings {
@@ -284,7 +288,8 @@ Task("CloseMilestone")
 Task("Create-Release-Notes")
     .Does(() =>
 {
-    GitReleaseManagerCreate(parameters.GitHub.UserName, parameters.GitHub.Password,  parameters.Git.RepositoryOwner, parameters.Git.RepositoryName,
+    GitReleaseManagerCreate(parameters.GitHub.UserName, parameters.GitHub.Password,
+                            parameters.GitHub.RepositoryOwner, parameters.GitHub.RepositoryName,
         new GitReleaseManagerCreateSettings
         {
             Milestone         = parameters.VersionInfo.Milestone,
@@ -305,14 +310,14 @@ Task("Publish-GitHub-Release")
         foreach (var nupkgFile in GetFiles(parameters.Paths.Directories.Artifacts + "/*.nupkg"))
         {
             GitReleaseManagerAddAssets(parameters.GitHub.UserName, parameters.GitHub.Password,
-                                       parameters.Git.RepositoryOwner, parameters.Git.RepositoryName,
+                                       parameters.GitHub.RepositoryOwner, parameters.GitHub.RepositoryName,
                                        parameters.VersionInfo.Milestone, nupkgFile.ToString());
         }
     }
 
     // Close milestone
     GitReleaseManagerClose(parameters.GitHub.UserName, parameters.GitHub.Password,
-                           parameters.Git.RepositoryOwner, parameters.Git.RepositoryName,
+                           parameters.GitHub.RepositoryOwner, parameters.GitHub.RepositoryName,
                            parameters.VersionInfo.Milestone);
 })
 .OnError(exception =>
