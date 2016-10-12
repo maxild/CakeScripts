@@ -95,15 +95,7 @@ Task("Info")
 Task("Clean")
     .Does(() =>
 {
-    // TODO: Move to helper in paths
-    if (DirectoryExists(parameters.Paths.Directories.TempArtifacts))
-    {
-        DeleteDirectory(parameters.Paths.Directories.TempArtifacts, true);
-    }
-    if (DirectoryExists(parameters.Paths.Directories.Artifacts))
-    {
-        DeleteDirectory(parameters.Paths.Directories.Artifacts, true);
-    }
+    parameters.ClearArtifacts();
 });
 
 Task("Build")
@@ -150,7 +142,7 @@ Task("Package")
         BasePath = parameters.Paths.Directories.TempArtifacts
     });
 
-    DeleteDirectory(parameters.Paths.Directories.TempArtifacts, true);
+    parameters.ClearTempArtifacts();
 });
 
 Task("Publish")

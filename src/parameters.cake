@@ -104,6 +104,23 @@ public class BuildParameters
         }
     }
 
+    public void ClearArtifacts()
+    {
+        ClearTempArtifacts();
+        if (_context.DirectoryExists(Paths.Directories.Artifacts))
+        {
+            _context.DeleteDirectory(Paths.Directories.Artifacts, true);
+        }
+    }
+
+    public void ClearTempArtifacts()
+    {
+        if (_context.DirectoryExists(Paths.Directories.TempArtifacts))
+        {
+            _context.DeleteDirectory(Paths.Directories.TempArtifacts, true);
+        }
+    }
+
     public void PrintToLog()
     {
         _context.Information("Target:                 {0}", Target);
