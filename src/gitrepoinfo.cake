@@ -74,18 +74,21 @@ public class GitRepoInfo
             throw new ArgumentNullException("settings");
         }
 
-        var git = new GitExec(context);
+        var git = new ToolRunner(context, new [] {"git.exe", "git"});
 
         string branch = git.Command("rev-parse --verify --abbrev-ref HEAD");
 
         // 2016-09-26T14:59:32+02:00
         string commitDateAsIsoWithOffset = git
             .Command("rev-list --format=%ad --date=iso-strict --max-count=1 HEAD")
-            .Split(git.NewLineToken)
+            .Split(new [] {git.NewLineToken}, StringSplitOptions.RemoveEmptyEntries)
             .Last();
 
-        // zero or one tag seem most likely, but a single commit can have many tags (we pick arbitrary tag, if many exists)
-        string[] tags = git.Command("tag -l --points-at HEAD").Split(git.NewLineToken);
+        // zero or one tag seem most likely, but a single commit can have
+        // many tags (we pick arbitrary tag, if many exists)
+        string[] tags = git.Command("tag -l --points-at HEAD")
+            .Split(new [] {git.NewLineToken}, StringSplitOptions.RemoveEmptyEntries);
+
         string tag = tags.Length > 0 ? tags[0] : string.Empty;
 
         return new GitRepoInfo(context)

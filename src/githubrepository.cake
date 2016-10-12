@@ -80,7 +80,7 @@ public class GitHubRepository
             throw new ArgumentNullException("context");
         }
 
-        var git = new GitExec(context);
+        var git = new ToolRunner(context, new [] {"git.exe", "git"});
 
         string remoteUrl = git.Command("remote get-url origin");  //
 

@@ -7,15 +7,14 @@
 // SCRIPTS (load all files to check compilation)
 ///////////////////////////////////////////////////////////////////////////////
 #load "src/failurehelpers.cake"
-#load "src/gitexec.cake"
 #load "src/githubrepository.cake"
 #load "src/gitrepoinfo.cake"
 #load "src/gitversioninfo.cake"
 #load "src/parameters.cake"
 #load "src/paths.cake"
 #load "src/projectjson.cake"
-#load "src/runhelpers.cake"
 #load "src/settings.cake"
+#load "src/toolrunner.cake"
 #load "src/utils.cake"
 
 ///////////////////////////////////////////////////////////////////////////////

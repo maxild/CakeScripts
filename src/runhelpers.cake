@@ -27,13 +27,13 @@ int Shell(string command, string workingDirectory)
 /// <returns>The exit status</returns>
 int Shell(string command, ProcessSettings settings)
 {
-    if (settings == null) 
+    if (settings == null)
     {
         throw new ArgumentNullException("settings");
     }
     var exec = IsRunningOnWindows() ? "powershell" : "bash";
-    var args = IsRunningOnWindows() 
-        ? "/Command " + command 
+    var args = IsRunningOnWindows()
+        ? "/Command " + command
         : "-C " + command;
     return Run(exec, args, settings);
 }
@@ -70,7 +70,7 @@ int Run(string exec, string args, string workingDirectory)
 /// <returns>The exit status</returns>
 int Run(string exec, string args, ProcessSettings settings)
 {
-    if (settings == null) 
+    if (settings == null)
     {
         throw new ArgumentNullException("settings");
     }

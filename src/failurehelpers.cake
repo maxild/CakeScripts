@@ -9,17 +9,3 @@ public class FailureHelper
         }
     }
 }
-
-public class TestResult
-{
-    private readonly string _msg;
-    public TestResult(string msg, int exitCode)
-    {
-        _msg = msg;
-        ExitCode = exitCode;
-    }
-
-    public int ExitCode { get; private set; }
-    public bool Failed { get { return ExitCode != 0; } }
-    public string ErrorMessage { get { return Failed ? string.Concat("One or more tests did fail on ", _msg) : string.Empty; } }
-}

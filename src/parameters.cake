@@ -104,6 +104,7 @@ public class BuildParameters
         }
     }
 
+    // TODO: Document why we do not use CleanDirectories/CleanDirectory alias, because it does not remove the folder
     public void ClearArtifacts()
     {
         ClearTempArtifacts();
@@ -119,6 +120,16 @@ public class BuildParameters
         {
             _context.DeleteDirectory(Paths.Directories.TempArtifacts, true);
         }
+    }
+
+    public ToolRunner GetTool(string toolName)
+    {
+        return new ToolRunner(_context, new [] {toolName});
+    }
+
+    public ToolRunner GetTool(params string[] toolNames)
+    {
+        return new ToolRunner(_context, toolNames);
     }
 
     public void PrintToLog()

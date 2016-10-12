@@ -108,7 +108,7 @@ public class GitVersionInfo
 
                 if (false == gitHubRepository.HasHttpsUrl)
                 {
-                    new GitExec(context)
+                    new ToolRunner(context, new [] {"git.exe", "git"})
                         .Command(string.Format("remote set-url origin {0}",
                             gitHubRepository.HttpsUrl));
                 }
