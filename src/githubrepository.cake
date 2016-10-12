@@ -3,9 +3,9 @@ public class GitHubRepository
 {
     // Git remote URLs (Named subexpr: (?<name>subexpression))
     //    https://github.com/USERNAME/REPOSITORY.git
-    const string HttpsUrlPattern = @"^https:\/\/github.com\/(?<RepositoryOwner>\w+)/(?<RepositoryName>\w+)\.git$";
+    const string HttpsUrlPattern = @"^https:\/\/github.com\/(?<RepositoryOwner>[-\w]+)/(?<RepositoryName>-[-\w]+)\.git$";
     //    git@github.com:USERNAME/REPOSITORY.git
-    const string SshUrlPattern = @"^git@github.com:(?<RepositoryOwner>\w+)/(?<RepositoryName>\w+)\.git$";
+    const string SshUrlPattern = @"^git@github.com:(?<RepositoryOwner>[-\w]+)/(?<RepositoryName>[-\w]+)\.git$";
 
     private readonly ICakeContext _context;
 
