@@ -94,16 +94,16 @@ public class GitHubRepository
             repoOwner = httpsMatch.Groups["RepositoryOwner"].Value;
             repoName = httpsMatch.Groups["RepositoryName"].Value;
             repoHasHttpsUrl = true;
-            context.Information(@"RepositoryOwner '{0}' and RepositoryName '{1}' resolved from origin remote url of the form 'https://github.com/USERNAME/REPOSITORY.git'.", repoOwner, repoName);
+            context.Information(@"RepositoryOwner '{0}' and RepositoryName '{1}' resolved from origin remote url of the form 'https://github.com/{0}/{1}.git'.", repoOwner, repoName);
         }
         else
         {
             // AppVeyor uses ssh for private repos
             var sshMatch = System.Text.RegularExpressions.Regex.Match(remoteUrl, SshUrlPattern, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             if (sshMatch.Success) {
-                repoOwner = httpsMatch.Groups["RepositoryOwner"].Value;
-                repoName = httpsMatch.Groups["RepositoryName"].Value;
-                context.Information(@"RepositoryOwner '{0}' and RepositoryName '{1}' resolved from origin remote url of the form 'git@github.com:USERNAME/REPOSITORY.git'.", repoOwner, repoName);
+                repoOwner = sshMatch.Groups["RepositoryOwner"].Value;
+                repoName = sshMatch.Groups["RepositoryName"].Value;
+                context.Information(@"RepositoryOwner '{0}' and RepositoryName '{1}' resolved from origin remote url 'git@github.com:{0}/{1}.git'.", repoOwner, repoName);
             }
             else
             {
