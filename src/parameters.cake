@@ -30,8 +30,8 @@ public class BuildParameters
     public bool IsPullRequest { get; private set; }
     public bool IsTagPush { get; private set; }
 
-    public NuGetFeed CIFeed { get; private set; }
-    public NuGetFeed ProdFeed { get; private set; }
+    public NuGetPushCredentials CIFeed { get; private set; }
+    public NuGetPushCredentials ProdFeed { get; private set; }
 
     public bool ShouldDeployToCIFeed { get { return DeployToAnyFeed(this) && _deployToCIFeedFunc(this); } }
     public bool ShouldDeployToProdFeed { get { return DeployToAnyFeed(this) && _deployToProdFeedFunc(this); } }
@@ -232,11 +232,11 @@ public class BuildParameters
                 !string.IsNullOrWhiteSpace(buildSystem.AppVeyor.Environment.Repository.Tag.Name)
             ),
 
-            CIFeed = new NuGetFeed(
+            CIFeed = new NuGetPushCredentials(
                 sourceUrl: settings.DeployToCIFeedUrl ?? context.EnvironmentVariable(settings.DeployToCIFeedUrlVariable),
                 apiKey: context.EnvironmentVariable(settings.DeployToCIApiKeyVariable) // secret
             ),
-            ProdFeed = new NuGetFeed(
+            ProdFeed = new NuGetPushCredentials(
                 sourceUrl: settings.DeployToProdFeedUrl ?? context.EnvironmentVariable(settings.DeployToProdFeedUrlVariable),
                 apiKey: context.EnvironmentVariable(settings.DeployToProdApiKeyVariable) // secret
             ),
@@ -266,12 +266,30 @@ public class BuildParameters
         };
     }
 
-    public class NuGetFeed
+    public class NuGetPushCredentials
     {
         public string SourceUrl { get; private set; }
         public string ApiKey { get; private set; }
 
-        public NuGetFeed(string sourceUrl, string apiKey)
+        public string GetRequiredSourceUrl()
+        {
+            if (string.IsNullOrEmpty(SourceUrl))
+            {
+                throw new InvalidOperationException("Could not resolve NuGet push URL.");
+            }
+            return SourceUrl;
+        }
+
+        public string GetRequiredApiKey()
+        {
+            if (string.IsNullOrEmpty(ApiKey))
+            {
+                throw new InvalidOperationException("Could not resolve NuGet push API key.");
+            }
+            return ApiKey;
+        }
+
+        public NuGetPushCredentials(string sourceUrl, string apiKey)
         {
             SourceUrl = sourceUrl;
             ApiKey = apiKey;

@@ -159,23 +159,11 @@ Task("Publish")
     .WithCriteria(() => DirectoryExists(parameters.Paths.Directories.Artifacts))
     .Does(() =>
 {
-    // TODO: GetRequiredSourceUrl/GetRequiredApiKey API
-
-    if (string.IsNullOrEmpty(parameters.ProdFeed.ApiKey))
-    {
-        throw new InvalidOperationException("Could not resolve NuGet push API key.");
-    }
-
-    if (string.IsNullOrEmpty(parameters.ProdFeed.SourceUrl))
-    {
-        throw new InvalidOperationException("Could not resolve NuGet push URL.");
-    }
-
     var nupkgFile = GetFiles(parameters.Paths.Directories.Artifacts + "/*.nupkg").Single();
 
     NuGetPush(nupkgFile, new NuGetPushSettings {
-        Source = parameters.ProdFeed.SourceUrl,
-        ApiKey = parameters.ProdFeed.ApiKey
+        Source = parameters.ProdFeed.GetRequiredSourceUrl(),
+        ApiKey = parameters.ProdFeed.GetRequiredApiKey()
     });
 })
 .OnError(exception =>
