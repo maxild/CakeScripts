@@ -3,4 +3,6 @@
 
 artifacts/
 
+src/CakeScriptsVersion.cake
+
 .DS_Store

@@ -1,4 +1,4 @@
-public class BuildParameters
+public partial class BuildParameters
 {
     private readonly ICakeContext _context;
     private readonly BuildSettings _settings;
@@ -198,7 +198,8 @@ public class BuildParameters
         return _context.EnvironmentVariable(variable);
     }
 
-    public static BuildParameters GetParameters(
+    // This method is used by public GetParameters in generated file
+    public static BuildParameters __GetParametersHelper__(
         ICakeContext context,
         BuildSystem buildSystem,
         BuildSettings settings,
