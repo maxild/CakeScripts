@@ -105,7 +105,7 @@ public class GitVersionInfo
                 context.GitVersion(new GitVersionSettings
                 {
                     OutputType = GitVersionOutput.BuildServer,
-                    // Private repos require this to avoid HTTP errors
+                    // In case the GitHub repository requires authentication (private repos requires this)
                     EnvironmentVariables = new Dictionary<string, string>
                     {
                         { "GITVERSION_REMOTE_USERNAME", gitHubCredentials.UserName },
