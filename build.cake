@@ -398,7 +398,7 @@ public partial class BuildParameters
         BuildPathSettings pathSettings = null
         )
     {{
-        context.Information(""Maxfire.CakeScripts version {{0}} is being executed by this build."", CakeScriptsVersion);
+        context.Information(""Maxfire.CakeScripts version {{0}} is being executed by this build."", ""{0}"");
         return GetParametersHelper(context, buildSystem, settings, pathSettings);
     }}
 
