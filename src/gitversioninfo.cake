@@ -58,7 +58,7 @@ public class GitVersionInfo
     public static GitVersionInfo Calculate(
         ICakeContext context,
         BuildSystem buildSystem,
-        Credentials gitHubCredentials,
+        BuildParameters.Credentials gitHubCredentials,
         GitHubRepository gitHubRepository
         )
     {

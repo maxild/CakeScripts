@@ -294,6 +294,31 @@ public class BuildParameters
         };
     }
 
+    public class Credentials
+    {
+        public string UserName { get; private set; }
+        public string Password { get; private set; }
+
+        public string GetRequiredPassword()
+        {
+            if (string.IsNullOrEmpty(Password))
+            {
+                throw new InvalidOperationException("Could not resolve password.");
+            }
+            return Password;
+        }
+
+        public Credentials(string userName, string password)
+        {
+            if (string.IsNullOrEmpty(userName))
+            {
+                throw new ArgumentException("UserName cannot be null or empty.");
+            }
+            UserName = userName;
+            Password = password; // empty, if no environment variable is configured in appveyor
+        }
+    }
+
     public class NuGetPushCredentials
     {
         public string SourceUrl { get; private set; }
@@ -366,21 +391,6 @@ public class BuildParameters
     }
 }
 
-public class Credentials
-{
-    public string UserName { get; private set; }
-    public string Password { get; private set; }
-
-    public Credentials(string userName, string password)
-    {
-        if (string.IsNullOrEmpty(userName))
-        {
-            throw new ArgumentException("UserName cannot be null or empty.");
-        }
-        UserName = userName;
-        Password = password; // empty, if no environment variable is configured in appveyor
-    }
-}
 
 public class Project
 {
