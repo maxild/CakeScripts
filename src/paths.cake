@@ -1,6 +1,7 @@
 public class BuildPathSettings
 {
     public string ArtifactsDir { get; set; }
+    public string TempArtifactsDir { get; set; }
     public string SrcDir { get; set; }
     public string TestDir { get; set; }
     public string BuildToolsDir { get; set; }
@@ -138,6 +139,7 @@ public class BuildDirectories
 
     public DirectoryPath Root { get; private set; }
     public DirectoryPath Artifacts { get; private set; }
+    public DirectoryPath TempArtifacts { get; private set; }
     public DirectoryPath Src { get; private set; }
     public DirectoryPath Test { get; private set; }
     public DirectoryPath BuildTools { get; private set; }
@@ -156,6 +158,7 @@ public class BuildDirectories
 
         Root = context.MakeAbsolute(context.Environment.WorkingDirectory);
         Artifacts = pathSettings.ArtifactsDir ?? "./artifacts";
+        TempArtifacts = pathSettings.TempArtifactsDir ?? Artifacts.Combine("temp");
         Src = pathSettings.SrcDir ?? "./src";
         Test = pathSettings.TestDir ?? "./test";
         BuildTools = pathSettings.BuildToolsDir ?? "./.tools";
@@ -168,16 +171,17 @@ public class BuildDirectories
     public void PrintToLog()
     {
         _context.Information("Directories configured:");
-        _context.Information("  Root:         {0}", Root);
-        _context.Information("  Artifacts:    {0}", Artifacts);
+        _context.Information("  Root:          {0}", Root);
+        _context.Information("  Artifacts:     {0}", Artifacts);
+        _context.Information("  TempArtifacts: {0}", TempArtifacts);
         // Relative paths are shown as 'artifacts', not './artifacts', also by GetRelativePath API
         //_context.Information("  Artifacts: {0}", Root.GetRelativePath(_context.MakeAbsolute(Artifacts)));
-        _context.Information("  Src:          {0}", Src);
-        _context.Information("  Test:         {0}", Test);
-        _context.Information("  BuildTools:   {0}", BuildTools);
-        _context.Information("  BuildScripts: {0}", BuildScripts);
-        _context.Information("  DotNet:       {0}", DotNet);
-        _context.Information("  Nuspec:       {0}", Nuspec);
-        _context.Information("  Packages:     {0}", Packages);
+        _context.Information("  Src:           {0}", Src);
+        _context.Information("  Test:          {0}", Test);
+        _context.Information("  BuildTools:    {0}", BuildTools);
+        _context.Information("  BuildScripts:  {0}", BuildScripts);
+        _context.Information("  DotNet:        {0}", DotNet);
+        _context.Information("  Nuspec:        {0}", Nuspec);
+        _context.Information("  Packages:      {0}", Packages);
     }
 }

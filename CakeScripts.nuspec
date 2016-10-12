@@ -5,11 +5,11 @@
     <version>0.0.0</version>
     <authors>maxfire</authors>
     <owners>maxfire</owners>
-    <description>Re-usable build scripts for Cake that can be used for numerous projects.</description>
+    <description>Re-usable build scripts for Cake that I use on a number of projects.</description>
     <tags>Build Cake</tags>
   </metadata>
   <files>
     <!-- target can be either 'content' or 'tools' ('lib' does not make sense) -->
-    <file src="src\*.cake" target="content" />
+    <file src="*.cake" target="content" />
   </files>
 </package>

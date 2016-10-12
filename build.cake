@@ -4,16 +4,19 @@
 #tool "nuget:?package=gitreleasemanager&version=0.6.0"
 
 ///////////////////////////////////////////////////////////////////////////////
-// SCRIPTS
+// SCRIPTS (load all files to check compilation)
 ///////////////////////////////////////////////////////////////////////////////
-#load "src/utils.cake"
+#load "src/failurehelpers.cake"
 #load "src/gitexec.cake"
 #load "src/githubrepository.cake"
-#load "src/gitversioninfo.cake"
 #load "src/gitrepoinfo.cake"
+#load "src/gitversioninfo.cake"
 #load "src/parameters.cake"
-#load "src/settings.cake"
 #load "src/paths.cake"
+#load "src/projectjson.cake"
+#load "src/runhelpers.cake"
+#load "src/settings.cake"
+#load "src/utils.cake"
 
 ///////////////////////////////////////////////////////////////////////////////
 // GLOBAL VARIABLES
@@ -61,38 +64,81 @@ Setup(context =>
 // Primary targets/tasks are short (= OneWord)
 // Secondary tasks can have ny name (= Many-Words-Separated-By-Hyphens)
 
+Task("Default")
+    .IsDependentOn("Info")
+    .IsDependentOn("Print-AppVeyor-Environment-Variables")
+    .IsDependentOn("Package");
+
+Task("AppVeyor")
+    .IsDependentOn("Info")
+    .IsDependentOn("Print-AppVeyor-Environment-Variables")
+    .IsDependentOn("Upload-AppVeyor-Artifacts")
+    .IsDependentOn("Publish")
+    //.IsDependentOn("Publish-GitHub-Release")
+    .Finally(() =>
+{
+    if (publishingError)
+    {
+        throw new Exception("An error occurred during the publishing of " + parameters.ProjectName + ".  All publishing tasks have been attempted.");
+    }
+});
+
 Task("ReleaseNotes")
   .IsDependentOn("Create-Release-Notes");
 
-// Clean
-// Restore
-// Build
-// Package
-
-// Clean
-Task("Clear-Artifacts")
+Task("Info")
     .Does(() =>
 {
+    parameters.PrintToLog();
+});
+
+Task("Clean")
+    .Does(() =>
+{
+    // TODO: Move to helper in paths
+    if (DirectoryExists(parameters.Paths.Directories.TempArtifacts))
+    {
+        DeleteDirectory(parameters.Paths.Directories.TempArtifacts, true);
+    }
     if (DirectoryExists(parameters.Paths.Directories.Artifacts))
     {
         DeleteDirectory(parameters.Paths.Directories.Artifacts, true);
     }
 });
 
-// Info
-Task("Show-Info")
+Task("Build")
+    .IsDependentOn("Clean")
     .Does(() =>
 {
-    parameters.PrintToLog();
+    EnsureDirectoryExists(parameters.Paths.Directories.TempArtifacts);
+
+    var allFile = parameters.Paths.Directories.TempArtifacts.CombineWithFilePath("all.cake");
+
+    using (var allStream = System.IO.File.OpenWrite(allFile.FullPath))
+    {
+        foreach (var srcFile in GetFiles(parameters.Paths.Directories.Src + "/*.cake"))
+        {
+            var dstFile = parameters.Paths.Directories.TempArtifacts
+                .CombineWithFilePath(srcFile.GetFilename());
+
+            // copy file to ./artifacts/temp folder
+            CopyFile(srcFile, dstFile);
+
+            // write/concat file to ./artifacts/temp/all.cake
+            using (var srcStream = System.IO.File.OpenRead(srcFile.FullPath))
+            {
+                srcStream.CopyTo(allStream);
+            }
+        }
+    }
 });
 
 Task("Package")
-    .IsDependentOn("Clear-Artifacts")
+    .IsDependentOn("Build")
     .WithCriteria(() => DirectoryExists(parameters.Paths.Directories.Nuspec))
+    .WithCriteria(() => DirectoryExists(parameters.Paths.Directories.TempArtifacts))
     .Does(() =>
 {
-    EnsureDirectoryExists(parameters.Paths.Directories.Artifacts);
-
     var nuspecFile = GetFiles(parameters.Paths.Directories.Nuspec + "/*.nuspec").Single();
 
     // TODO: Addin the release notes in the nuspec
@@ -100,28 +146,21 @@ Task("Package")
 
     NuGetPack(nuspecFile, new NuGetPackSettings {
         Version = parameters.VersionInfo.NuGetVersion,
-        OutputDirectory = parameters.Paths.Directories.Artifacts
+        OutputDirectory = parameters.Paths.Directories.Artifacts,
+        BasePath = parameters.Paths.Directories.TempArtifacts
     });
+
+    DeleteDirectory(parameters.Paths.Directories.TempArtifacts, true);
 });
 
-// appveyor PushArtifact <path> [options] (See https://www.appveyor.com/docs/build-worker-api/#push-artifact)
-Task("Upload-AppVeyor-Artifacts")
-    .IsDependentOn("Package")
-    .WithCriteria(() => parameters.IsRunningOnAppVeyor)
-    .WithCriteria(() => DirectoryExists(parameters.Paths.Directories.Artifacts))
-    .Does(() =>
-{
-    var nupkgFile = GetFiles(parameters.Paths.Directories.Artifacts + "/*.nupkg").Single();
-    AppVeyor.UploadArtifact(nupkgFile);
-
-});
-
-Task("Publish-Packages")
+Task("Publish")
     .IsDependentOn("Package")
     .WithCriteria(() => parameters.ShouldDeployToProdFeed)
     .WithCriteria(() => DirectoryExists(parameters.Paths.Directories.Artifacts))
     .Does(() =>
 {
+    // TODO: GetRequiredSourceUrl/GetRequiredApiKey API
+
     if (string.IsNullOrEmpty(parameters.ProdFeed.ApiKey))
     {
         throw new InvalidOperationException("Could not resolve NuGet push API key.");
@@ -141,7 +180,7 @@ Task("Publish-Packages")
 })
 .OnError(exception =>
 {
-    Information("Publish-Packages Task failed, but continuing with next Task...");
+    Information("Publish Task failed, but continuing with next Task...");
     publishingError = true;
 });
 
@@ -326,24 +365,6 @@ Task("Publish-GitHub-Release")
     publishingError = true;
 });
 
-Task("Default")
-    .IsDependentOn("Show-Info")
-    .IsDependentOn("Print-AppVeyor-Environment-Variables")
-    .IsDependentOn("Package");
-
-Task("AppVeyor")
-    .IsDependentOn("Show-Info")
-    .IsDependentOn("Print-AppVeyor-Environment-Variables")
-    .IsDependentOn("Upload-AppVeyor-Artifacts")
-    .IsDependentOn("Publish-Packages")
-    //.IsDependentOn("Publish-GitHub-Release")
-    .Finally(() =>
-{
-    if (publishingError)
-    {
-        throw new Exception("An error occurred during the publishing of " + parameters.ProjectName + ".  All publishing tasks have been attempted.");
-    }
-});
 
 // Task("ClearCache")
 //   .IsDependentOn("Clear-AppVeyor-Cache");
@@ -359,6 +380,17 @@ Task("Print-AppVeyor-Environment-Variables")
     parameters.PrintAppVeyorEnvironmentVariables();
 });
 
+// appveyor PushArtifact <path> [options] (See https://www.appveyor.com/docs/build-worker-api/#push-artifact)
+Task("Upload-AppVeyor-Artifacts")
+    .IsDependentOn("Package")
+    .WithCriteria(() => parameters.IsRunningOnAppVeyor)
+    .WithCriteria(() => DirectoryExists(parameters.Paths.Directories.Artifacts))
+    .Does(() =>
+{
+    var nupkgFile = GetFiles(parameters.Paths.Directories.Artifacts + "/*.nupkg").Single();
+    AppVeyor.UploadArtifact(nupkgFile);
+
+});
 
 ///////////////////////////////////////////////////////////////////////////////
 // EXECUTION

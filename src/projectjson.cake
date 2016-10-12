@@ -1,3 +1,5 @@
+#addin nuget:?package=Newtonsoft.Json&version=9.0.1
+
 public class ProjectJsonUtil
 {
     public static string ReadProjectJsonVersion(ICakeContext context)
