@@ -79,12 +79,37 @@ public class ToolRunner
         return _context.StartProcess(ToolPath, settings);
     }
 
+    public string Command(string args)
+    {
+        return CommandHelper(args);
+    }
+
+    public string Command(string formatArgs, string arg1)
+    {
+        return CommandHelper(string.Format(formatArgs, arg1));
+    }
+
+    public string Command(string formatArgs, string arg1, string arg2)
+    {
+        return CommandHelper(string.Format(formatArgs, arg1, arg2));
+    }
+
+    public string Command(string formatArgs, string arg1, string arg2, string arg3)
+    {
+        return CommandHelper(string.Format(formatArgs, arg1, arg2, arg3));
+    }
+
+    public string Command(string formatArgs, params string[] args)
+    {
+        return CommandHelper(string.Format(formatArgs, args));
+    }
+
     /// <summary>
     ///  Run the tool with the given arguments.
     /// </summary>
     /// <param name="args">The arguments.</param>
     /// <returns>The output written to stdout.</returns>
-    public string Command(string args)
+    string CommandHelper(string args)
     {
         IEnumerable<string> stdout;
         int exit = _context.StartProcess(ToolPath,
