@@ -3,7 +3,7 @@ public class GitHubRepository
 {
     // Git remote URLs (Named subexpr: (?<name>subexpression))
     //    https://github.com/USERNAME/REPOSITORY.git
-    const string HttpsUrlPattern = @"^https:\/\/github.com\/(?<RepositoryOwner>[-\w]+)/(?<RepositoryName>-[-\w]+)\.git$";
+    const string HttpsUrlPattern = @"^https://github.com\/(?<RepositoryOwner>[-\w]+)/(?<RepositoryName>[-\w]+)\.git$";
     //    git@github.com:USERNAME/REPOSITORY.git
     const string SshUrlPattern = @"^git@github.com:(?<RepositoryOwner>[-\w]+)/(?<RepositoryName>[-\w]+)\.git$";
 
@@ -97,10 +97,7 @@ public class GitHubRepository
             }
             else
             {
-                // TODO: Maybe throw exception
-                context.Warning("Unable to resolve RepositoryOwner and RepositoryName from remote url '{0}'", remoteUrl);
-                repoOwner = string.Empty;
-                repoName = string.Empty;
+                throw new InvalidOperationException(string.Format("Unable to resolve RepositoryOwner and RepositoryName from remote url '{0}'", remoteUrl));
             }
         }
 
