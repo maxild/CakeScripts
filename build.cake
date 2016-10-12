@@ -399,7 +399,7 @@ public partial class BuildParameters
         )
     {{
         context.Information(""Maxfire.CakeScripts version {{0}} is being executed by this build."", ""{0}"");
-        return GetParametersHelper(context, buildSystem, settings, pathSettings);
+        return __GetParametersHelper__(context, buildSystem, settings, pathSettings);
     }}
 
     public string CakeScriptsVersion
