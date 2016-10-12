@@ -86,6 +86,19 @@ public class GitVersionInfo
         {
             context.Information("Calculating Semantic Version...");
 
+            // In case the GitHub repository requires authentication (i.e
+            // is a private repository) we configure GitHub credentials with
+            // gitVersion tool
+            IDictionary<string, string> environmentVariables = null;
+            if (false == string.IsNullOrEmpty(gitHubCredentials.Password))
+            {
+                environmentVariables = new Dictionary<string, string>
+                {
+                    { "GITVERSION_REMOTE_USERNAME", gitHubCredentials.UserName },
+                    { "GITVERSION_REMOTE_PASSWORD", gitHubCredentials.Password }
+                };
+            };
+
             if (false == buildSystem.IsLocalBuild)
             {
                 // Running on AppVeyor, we have to patch private repos
@@ -95,22 +108,16 @@ public class GitVersionInfo
 
                 if (false == gitHubRepository.HasHttpsUrl)
                 {
-                    // git remote set-url origin https://github.com/OWNER/REPONAME.git
-                    const char SEP = '#';
-                    var git = new GitExec(context, SEP);
-                    git.Command(string.Format("remote set-url origin {0}", gitHubRepository.HttpsUrl));
+                    new GitExec(context)
+                        .Command(string.Format("remote set-url origin {0}",
+                            gitHubRepository.HttpsUrl));
                 }
 
                 // Running on AppVeyor, we have to patch/setup local tracking branches
                 context.GitVersion(new GitVersionSettings
                 {
                     OutputType = GitVersionOutput.BuildServer,
-                    // In case the GitHub repository requires authentication (private repos requires this)
-                    EnvironmentVariables = new Dictionary<string, string>
-                    {
-                        { "GITVERSION_REMOTE_USERNAME", gitHubCredentials.UserName },
-                        { "GITVERSION_REMOTE_PASSWORD", gitHubCredentials.Password }
-                    }
+                    EnvironmentVariables = environmentVariables
                 });
 
                 majorMinorPatch = context.EnvironmentVariable("GitVersion_MajorMinorPatch");
@@ -121,7 +128,8 @@ public class GitVersionInfo
 
             var assertedVersions = context.GitVersion(new GitVersionSettings
             {
-                OutputType = GitVersionOutput.Json
+                OutputType = GitVersionOutput.Json,
+                EnvironmentVariables = environmentVariables
             });
 
             majorMinorPatch = assertedVersions.MajorMinorPatch;

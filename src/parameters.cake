@@ -14,6 +14,8 @@ public class BuildParameters
         _deployToProdFeedFunc = settings.DeployToProdFeed ?? DefaultDeployToProdFeed;
     }
 
+    public string ProjectName { get; private set; }
+
     public string Target { get; private set; }
     public string Configuration { get; private set; }
 
@@ -57,8 +59,6 @@ public class BuildParameters
     public GitHubRepositoryAndCredentials GitHub { get; private set; }
 
     public Credentials MyGet { get; private set; }
-
-    public ProjectInfo Project { get; private set; }
 
     public BuildPaths Paths { get; private set; }
 
@@ -205,10 +205,15 @@ public class BuildParameters
         var repoInfo = GitRepoInfo.Calculate(context, settings);
 
         var configuration = context.Argument("configuration", "Release");
-        var projectInfo = new ProjectInfo(context, settings, gitHubRepository);
+
+        var projectName = settings.ProjectName ??
+                          settings.RepositoryName ??
+                          gitHubRepository.Name;
 
         return new BuildParameters(context, settings)
         {
+            ProjectName = projectName,
+
             Target = context.Argument("target", "Default"),
             Configuration = configuration,
 
@@ -248,14 +253,16 @@ public class BuildParameters
             ),
 
             MyGet = new Credentials(
-                userName: settings.MyGetUserName ?? context.EnvironmentVariable(settings.MyGetUserNameVariable),
+                userName: settings.MyGetUserName ?? context.EnvironmentVariable(settings.MyGetUserNameVariable) ?? "maxfire",
                 password: context.EnvironmentVariable(settings.MyGetPasswordVariable) //secret
             ),
 
             VersionInfo = versionInfo,
             Git = repoInfo,
-            Project = projectInfo,
-            Paths = new BuildPaths(context, settings, pathSettings ?? new BuildPathSettings(), projectInfo)
+            Paths = new BuildPaths(context,
+                                   settings,
+                                   pathSettings ?? new BuildPathSettings(),
+                                   projectName)
         };
     }
 
@@ -320,33 +327,12 @@ public class Credentials
 
     public Credentials(string userName, string password)
     {
-        UserName = userName;
-        Password = password;
-    }
-}
-
-public class ProjectInfo
-{
-    private readonly ICakeContext _context;
-
-    public ProjectInfo(ICakeContext context, BuildSettings settings, GitHubRepository gitHubRepository)
-    {
-        if (context == null)
+        if (string.IsNullOrEmpty(userName))
         {
-            throw new ArgumentNullException("context");
+            throw new ArgumentException("UserName cannot be null or empty.");
         }
-        _context = context;
-
-        Name = settings.ProjectName ??
-                settings.RepositoryName ??
-                gitHubRepository.Name ?? string.Empty;
-    }
-
-    public string Name { get; private set; }
-
-    public void PrintToLog()
-    {
-        _context.Information("Name: {0}", Name);
+        UserName = userName;
+        Password = password; // empty, if no environment variable is configured in appveyor
     }
 }
 

@@ -1,10 +1,10 @@
 public class GitExec
 {
+    const char SEP = '#';
     private readonly ICakeContext _context;
     private readonly string _gitPath;
-    private readonly char _newLineToken;
 
-    public GitExec(ICakeContext context, char newLineToken)
+    public GitExec(ICakeContext context, char? newLineToken = null)
     {
         _context = context;
         var path = context.Tools.Resolve("git.exe").FullPath;
@@ -13,10 +13,12 @@ public class GitExec
             throw new InvalidOperationException("Cake could not resolve the PATH to git.exe");
         }
         Path = path;
-        _newLineToken = newLineToken;
+        NewLineToken = newLineToken ?? SEP;
     }
 
     public string Path { get; private set; }
+
+    public char NewLineToken { get; private set; }
 
     // TODO: Move to runhelpers.cake (where stdout capturing command is missing)
     public string Command(string arguments)
@@ -27,7 +29,7 @@ public class GitExec
             Arguments = arguments,
             RedirectStandardOutput = true,
         }, out stdout);
-        string result = exit == 0 ? (string.Join(_newLineToken.ToString(), stdout) ?? string.Empty).Trim() : string.Empty;
+        string result = exit == 0 ? (string.Join(NewLineToken.ToString(), stdout) ?? string.Empty).Trim() : string.Empty;
         //_context.Information("git {0} --> {1}", arguments, result);
         return result;
     }

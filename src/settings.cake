@@ -12,6 +12,7 @@ public class BuildSettings
         set { _repositoryOwner = value; }
     }
 
+    // mandatory setting
     public string RepositoryName { get; set; }
 
     // The following 4 settings can either be configured directly

@@ -74,19 +74,18 @@ public class GitRepoInfo
             throw new ArgumentNullException("settings");
         }
 
-        // using env var PATH
-        const char SEP = '#';
-        var git = new GitExec(context, SEP);
-
-        context.Information("Git path: {0}", git.Path);
+        var git = new GitExec(context);
 
         string branch = git.Command("rev-parse --verify --abbrev-ref HEAD");
 
         // 2016-09-26T14:59:32+02:00
-        string commitDateAsIsoWithOffset = git.Command("rev-list --format=%ad --date=iso-strict --max-count=1 HEAD").Split(SEP).Last();
+        string commitDateAsIsoWithOffset = git
+            .Command("rev-list --format=%ad --date=iso-strict --max-count=1 HEAD")
+            .Split(git.NewLineToken)
+            .Last();
 
         // zero or one tag seem most likely, but a single commit can have many tags (we pick arbitrary tag, if many exists)
-        string[] tags = git.Command("tag -l --points-at HEAD").Split(SEP);
+        string[] tags = git.Command("tag -l --points-at HEAD").Split(git.NewLineToken);
         string tag = tags.Length > 0 ? tags[0] : string.Empty;
 
         return new GitRepoInfo(context)

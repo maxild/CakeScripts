@@ -15,6 +15,18 @@ public class GitHubRepository
         string name,
         bool hasHttpsUrl)
     {
+        if (context == null)
+        {
+            throw new ArgumentNullException("context");
+        }
+        if (string.IsNullOrEmpty(owner))
+        {
+           throw new ArgumentException("RepositoryOwner cannot be null or empty.");
+        }
+        if (string.IsNullOrEmpty(name))
+        {
+           throw new ArgumentException("RepositoryName cannot be null or empty.");
+        }
         _context = context;
         Owner = owner;
         Name = name;
@@ -68,9 +80,7 @@ public class GitHubRepository
             throw new ArgumentNullException("context");
         }
 
-        // using env var PATH
-        const char SEP = '#';
-        var git = new GitExec(context, SEP);
+        var git = new GitExec(context);
 
         string remoteUrl = git.Command("remote get-url origin");  //
 
@@ -84,7 +94,7 @@ public class GitHubRepository
             repoOwner = httpsMatch.Groups["RepositoryOwner"].Value;
             repoName = httpsMatch.Groups["RepositoryName"].Value;
             repoHasHttpsUrl = true;
-            context.Warning(@"RepositoryOwner '{0}' and RepositoryName '{1}' resolved from origin remote url of the form 'https://github.com/USERNAME/REPOSITORY.git'.", repoOwner, repoName);
+            context.Information(@"RepositoryOwner '{0}' and RepositoryName '{1}' resolved from origin remote url of the form 'https://github.com/USERNAME/REPOSITORY.git'.", repoOwner, repoName);
         }
         else
         {
@@ -93,7 +103,7 @@ public class GitHubRepository
             if (sshMatch.Success) {
                 repoOwner = httpsMatch.Groups["RepositoryOwner"].Value;
                 repoName = httpsMatch.Groups["RepositoryName"].Value;
-                context.Warning(@"RepositoryOwner '{0}' and RepositoryName '{1}' resolved from origin remote url of the form 'git@github.com:USERNAME/REPOSITORY.git'.", repoOwner, repoName);
+                context.Information(@"RepositoryOwner '{0}' and RepositoryName '{1}' resolved from origin remote url of the form 'git@github.com:USERNAME/REPOSITORY.git'.", repoOwner, repoName);
             }
             else
             {

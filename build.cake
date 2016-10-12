@@ -47,7 +47,7 @@ Setup(context =>
 
     Information("Building version {0} of {1} ({2}, {3}) using version {4} of Cake. (IsTagPush: {5})",
         parameters.VersionInfo.SemVer,
-        parameters.Project.Name,
+        parameters.ProjectName,
         parameters.Configuration,
         parameters.Target,
         parameters.VersionInfo.CakeVersion,
@@ -341,7 +341,7 @@ Task("AppVeyor")
 {
     if (publishingError)
     {
-        throw new Exception("An error occurred during the publishing of " + parameters.Project.Name + ".  All publishing tasks have been attempted.");
+        throw new Exception("An error occurred during the publishing of " + parameters.ProjectName + ".  All publishing tasks have been attempted.");
     }
 });
 

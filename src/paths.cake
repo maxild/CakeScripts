@@ -20,7 +20,7 @@ public class BuildPaths
         ICakeContext context,
         BuildSettings settings,
         BuildPathSettings pathSettings,
-        ProjectInfo projectInfo)
+        string projectName)
     {
         if (context == null)
         {
@@ -34,12 +34,12 @@ public class BuildPaths
         {
             throw new ArgumentNullException("pathSettings");
         }
-        if (projectInfo == null)
+        if (string.IsNullOrEmpty(projectName))
         {
-            throw new ArgumentNullException("projectInfo");
+            throw new ArgumentException("projectName cannot be null or empty.");
         }
 
-        Files       = new BuildFiles      (context, settings, pathSettings, projectInfo);
+        Files       = new BuildFiles      (context, settings, pathSettings, projectName);
         Directories = new BuildDirectories(context, settings, pathSettings);
         Tools       = new ToolFiles       (context, settings, pathSettings, Directories);
     }
@@ -100,12 +100,12 @@ public class BuildFiles
         ICakeContext context,
         BuildSettings settings,
         BuildPathSettings pathSettings,
-        ProjectInfo projectInfo)
+        string projectName)
     {
         _context = context;
 
         string solutionDirectoryPath = pathSettings.SolutionDirectoryPath ?? ".";
-        string solutionFileName = pathSettings.SolutionFileName ?? projectInfo.Name;
+        string solutionFileName = pathSettings.SolutionFileName ?? projectName;
         if (string.IsNullOrEmpty(solutionFileName))
         {
             // solution file name cannot be empty because this triggers argumment exception in Cake.Core
