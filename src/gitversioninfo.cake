@@ -56,6 +56,7 @@ public class GitVersionInfo
         _context.Information("  AssemblyFileVersion:          {0}", AssemblyFileVersion);
         _context.Information("  AssemblyInformationalVersion: {0}", AssemblyInformationalVersion);
         _context.Information("  SemVer:                       {0}", SemVer);
+        _context.Information("  Milestone:                    {0}", Milestone);
     }
 
     public static GitVersionInfo Calculate(
