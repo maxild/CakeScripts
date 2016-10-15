@@ -40,7 +40,7 @@ public class GitVersionInfo
 
     public string SemVer { get; private set; }
 
-    public string Milestone { get { return string.Format("v{0}", MajorMinorPatch); } }
+    public string Milestone { get { return MajorMinorPatch; } }
 
     public string CakeVersion { get; private set; }
 
