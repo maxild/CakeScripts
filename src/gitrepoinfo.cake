@@ -8,7 +8,7 @@ public class GitRepoInfo
     const string HotfixBranchRegex           = @"^hotfix(es)?/";
     const string ReleaseCandidateBranchRegex = @"^releases?/(0|[1-9]\d*)[.](0|[1-9]\d*)([.](0|[1-9]\d*))?"; // release/major.minor[.patch]
     const string SupportBranchRegex          = @"^support/(0|[1-9]\d*)[.](x|0|[1-9]\d*)";                   // support/1.2.x, support/1.x
-    const string PullRequestBranchRegex      = @"(pull|pull\-requests|pr)[/-]";
+    const string PullRequestBranchRegex      = @"^(pull|pull\-requests|pr)[/-]";
 
     private readonly ICakeContext _context;
 
@@ -58,6 +58,7 @@ public class GitRepoInfo
         _context.Information("  IsDevelopBranch:          {0}", IsDevelopBranch);
         _context.Information("  IsMasterBranch:           {0}", IsMasterBranch);
         _context.Information("  IsSupportBranch:          {0}", IsSupportBranch);
+        _context.Information("  IsReleaseLineBranch:      {0}", IsReleaseLineBranch);
         _context.Information("  IsPullRequestBranch:      {0}", IsPullRequestBranch);
         _context.Information("  Tag:                      {0}", Tag);
         _context.Information("  IsTag:                    {0}", IsTag);
