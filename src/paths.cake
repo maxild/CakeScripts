@@ -161,7 +161,7 @@ public class BuildDirectories
         TempArtifacts = pathSettings.TempArtifactsDir ?? Artifacts.Combine("temp");
         Src = pathSettings.SrcDir ?? "./src";
         Test = pathSettings.TestDir ?? "./test";
-        BuildTools = pathSettings.BuildToolsDir ?? "./.tools";
+        BuildTools = pathSettings.BuildToolsDir ?? "./tools";
         BuildScripts = pathSettings.BuildScriptsDir ?? "./build";
         DotNet = pathSettings.DotNetDir ?? "./.dotnet";
         Nuspec = pathSettings.NuspecDir ?? "./nuspec";

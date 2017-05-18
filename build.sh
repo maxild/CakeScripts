@@ -9,12 +9,11 @@
 # Define directories.
 SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-BUILD_DIR=$SCRIPT_DIR/build # build scripts, maybe rename
-TOOLS_DIR=$SCRIPT_DIR/.tools
-NUGET_EXE=$TOOLS_DIR/nuget.exe
-CAKE_EXE=$TOOLS_DIR/Cake/Cake.exe
-PACKAGES_CONFIG=$BUILD_DIR/packages.config
-PACKAGES_CONFIG_MD5=$TOOLS_DIR/packages.config.md5sum
+TOOLS_DIR="$SCRIPT_DIR/tools"
+NUGET_EXE="$TOOLS_DIR/nuget.exe"
+CAKE_EXE="$TOOLS_DIR/Cake/Cake.exe"
+PACKAGES_CONFIG="$TOOLS_DIR/packages.config"
+PACKAGES_CONFIG_MD5="$TOOLS_DIR/packages.config.md5sum"
 
 # Define md5sum or md5 depending on Linux/OSX
 MD5_EXE=
@@ -40,7 +39,7 @@ for i in "$@"; do
         -t|--target) TARGET="$2"; shift ;;
         -c|--configuration) CONFIGURATION="$2"; shift ;;
         -v|--verbosity) VERBOSITY="$2"; shift ;;
-        -d|--dryrun) DRYRUN="-dryrun" ;;
+        -d|--dryrun) DRYRUN="--dryrun" ;;
         --version) SHOW_VERSION=true ;;
         --) shift; SCRIPT_ARGUMENTS+=("$@"); break ;;
         *) SCRIPT_ARGUMENTS+=("$1") ;;
@@ -67,7 +66,7 @@ fi
 pushd "$TOOLS_DIR" >/dev/null
 
 # Check for changes in packages.config and remove installed tools if true.
-    if [ ! -f $PACKAGES_CONFIG_MD5 ] || [ "$( cat $PACKAGES_CONFIG_MD5 | sed 's/\r$//' )" != "$( $MD5_EXE $PACKAGES_CONFIG | awk '{ print $1 }' )" ]; then
+if [ ! -f $PACKAGES_CONFIG_MD5 ] || [ "$( cat $PACKAGES_CONFIG_MD5 | sed 's/\r$//' )" != "$( $MD5_EXE $PACKAGES_CONFIG | awk '{ print $1 }' )" ]; then
     find . -type d ! -name . | xargs rm -rf
 fi
 
@@ -95,7 +94,7 @@ else
 # C# v6 features (e.g. string interpolation) are not supported without '-experimental' flag
 #   See https://github.com/cake-build/cake/issues/293
 #   See https://github.com/cake-build/cake/issues/326
-# TODO: Is -experimental necessary on mono?
-    #exec mono "$CAKE_EXE" $SCRIPT -experimental -verbosity=$VERBOSITY -configuration=$CONFIGURATION -target=$TARGET $DRYRUN "${SCRIPT_ARGUMENTS[@]}"
-    exec mono "$CAKE_EXE" $SCRIPT -verbosity=$VERBOSITY -configuration=$CONFIGURATION -target=$TARGET $DRYRUN "${SCRIPT_ARGUMENTS[@]}"
+# TODO: Is --experimental necessary on mono?
+    #exec mono "$CAKE_EXE" $SCRIPT --experimental --verbosity=$VERBOSITY --configuration=$CONFIGURATION --target=$TARGET $DRYRUN "${SCRIPT_ARGUMENTS[@]}"
+    exec mono "$CAKE_EXE" $SCRIPT --verbosity=$VERBOSITY --configuration=$CONFIGURATION --target=$TARGET $DRYRUN "${SCRIPT_ARGUMENTS[@]}"
 fi

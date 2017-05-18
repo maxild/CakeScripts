@@ -86,7 +86,7 @@ function MD5HashFile([string] $filePath)
 $PSScriptRoot = split-path -parent $MyInvocation.MyCommand.Definition;
 
 # Tree
-$TOOLS_DIR           = Join-Path $PSScriptRoot ".tools"
+$TOOLS_DIR           = Join-Path $PSScriptRoot "tools"
 $NUGET_EXE           = Join-Path $TOOLS_DIR "nuget.exe"
 $CAKE_EXE            = Join-Path $TOOLS_DIR "Cake/Cake.exe"
 $PACKAGES_CONFIG     = Join-Path $TOOLS_DIR "packages.config" # containing Cake dependency
@@ -115,7 +115,7 @@ if($WhatIf.IsPresent) {
     $UseDryRun = "-dryrun"
 }
 
-# Make sure .tools folder exists
+# Make sure tools folder exists
 if ((Test-Path $PSScriptRoot) -and (-not (Test-Path $TOOLS_DIR))) {
     Write-Verbose -Message "Creating tools directory..."
     New-Item -Path $TOOLS_DIR -Type directory | out-null
