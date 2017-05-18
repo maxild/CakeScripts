@@ -1,10 +1,10 @@
 language: csharp
+os:
+  - linux
+  - osx
 
 sudo: required
 dist: trusty
-
-env:
-  - CLI_VERSION=1.0.0-preview2-003121
 
 # See also https://github.com/dotnet/core/blob/master/Documentation/prereqs.md
 addons:
@@ -20,10 +20,6 @@ addons:
 mono:
   - latest
 
-os:
-  - linux # Ubuntu 14.04
-  - osx
-
 osx_image: xcode7.3
 
 install:
@@ -34,5 +30,4 @@ install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew list; fi
 
 script:
-  - ./build.sh --target Verify --configuration Debug
-  - ./build.sh --target Verify --configuration Release
+  - ./build.sh --target Travis --verbosity diagnostic

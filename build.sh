@@ -72,12 +72,12 @@ fi
 
 mono "$NUGET_EXE" install $PACKAGES_CONFIG -ExcludeVersion
 if [ $? -ne 0 ]; then
-    echo "Could not restore NuGet packages."
+    echo "Could not restore NuGet tools."
     exit 1
 fi
 
 # save packages.config hash to disk
-$MD5_EXE $PACKAGES_CONFIG | awk '{ print $1 }' >| $PACKAGES_CONFIG_MD5
+$MD5_EXE "$PACKAGES_CONFIG" | awk '{ print $1 }' >| "$PACKAGES_CONFIG_MD5"
 
 popd >/dev/null
 

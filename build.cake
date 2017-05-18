@@ -72,6 +72,10 @@ Task("Default")
     .IsDependentOn("Print-AppVeyor-Environment-Variables")
     .IsDependentOn("Package");
 
+Task("Travis")
+    .IsDependentOn("Info")
+    .IsDependentOn("Package");
+
 Task("AppVeyor")
     .IsDependentOn("Info")
     .IsDependentOn("Print-AppVeyor-Environment-Variables")
