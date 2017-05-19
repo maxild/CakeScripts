@@ -6,7 +6,6 @@ public class BuildPathSettings
     public string TestDir { get; set; }
     public string BuildToolsDir { get; set; }
     public string BuildScriptsDir { get; set; }
-    public string DotNetDir { get; set; }
     public string NuspecDir { get; set; }
     public string PackagesDir { get; set; }
     public string CommonAssemblyInfoDirectoryPath { get; set; }
@@ -64,7 +63,6 @@ public class ToolFiles
 {
     private readonly ICakeContext _context;
 
-    public FilePath DotNet { get; private set; }
     public FilePath NuGet { get; private set; }
     // TODO: Git
 
@@ -76,16 +74,12 @@ public class ToolFiles
     {
         _context = context;
 
-        DotNet = context.IsRunningOnWindows()
-                ? dirs.DotNet.CombineWithFilePath("dotnet.exe")
-                : dirs.DotNet.CombineWithFilePath("dotnet");
         NuGet = dirs.BuildTools.CombineWithFilePath("nuget.exe"); // TODO: Cross-plat???
     }
 
     public void PrintToLog()
     {
         _context.Information("Tools configured:");
-        _context.Information("  DotNet: {0}", DotNet);
         _context.Information("  NuGet:  {0}", NuGet);
     }
 }
@@ -144,7 +138,6 @@ public class BuildDirectories
     public DirectoryPath Test { get; private set; }
     public DirectoryPath BuildTools { get; private set; }
     public DirectoryPath BuildScripts { get; private set; }
-    public DirectoryPath DotNet { get; private set; }
     public DirectoryPath Nuspec { get; private set; }
     public DirectoryPath Packages { get; private set; }
 
@@ -163,7 +156,6 @@ public class BuildDirectories
         Test = pathSettings.TestDir ?? "./test";
         BuildTools = pathSettings.BuildToolsDir ?? "./tools";
         BuildScripts = pathSettings.BuildScriptsDir ?? "./build";
-        DotNet = pathSettings.DotNetDir ?? "./.dotnet";
         Nuspec = pathSettings.NuspecDir ?? "./nuspec";
         Packages = pathSettings.PackagesDir ?? "./packages";
     }
@@ -180,7 +172,6 @@ public class BuildDirectories
         _context.Information("  Test:          {0}", Test);
         _context.Information("  BuildTools:    {0}", BuildTools);
         _context.Information("  BuildScripts:  {0}", BuildScripts);
-        _context.Information("  DotNet:        {0}", DotNet);
         _context.Information("  Nuspec:        {0}", Nuspec);
         _context.Information("  Packages:      {0}", Packages);
     }

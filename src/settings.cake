@@ -26,12 +26,6 @@ public class BuildSettings
     public Func<BuildParameters, bool> DeployToCIFeed { get; set; }
     public Func<BuildParameters, bool> DeployToProdFeed { get; set; }
 
-    public bool UseSystemDotNetPath { get; set; }
-    public string DotNetCliInstallScriptUrl { get; set; }
-    public string DotNetCliBranch { get; set; }
-    public string DotNetCliChannel { get; set; }
-    public string DotNetCliVersion { get; set; }
-
     //
     // Environment Variables
     //
