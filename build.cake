@@ -23,7 +23,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 // Here we call the (pseudo) private __GetParametersHelper__ method,
-// because the way we generate the CakeScriptsVersion property in the
+// because the way we generate the CakeScripts.Version property in the
 // 'Generate-CakeScripts-Version-Source-File' task.
 var parameters = BuildParameters.__GetParametersHelper__(
     Context,            // ICakeContext
@@ -289,7 +289,7 @@ Task("Generate-CakeScripts-Version-Source-File")
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-public partial class BuildParameters
+public static class CakeScripts
 {{
     public static BuildParameters GetParameters(
         ICakeContext context,
@@ -298,17 +298,18 @@ public partial class BuildParameters
         BuildPathSettings pathSettings = null
         )
     {{
-        context.Information(""Maxfire.CakeScripts version {{0}} is being executed by this build."", ""{0}"");
+        context.Information(""Maxfire.CakeScripts version {{0}} is being executed by this build."", Version);
         return __GetParametersHelper__(context, buildSystem, settings, pathSettings);
     }}
 
-    public string CakeScriptsVersion
+    public static string Version
     {{
         get {{ return ""{0}""; }}
     }}
-}}", parameters.VersionInfo.SemVer);
+}}
+", parameters.VersionInfo.SemVer);
 
-    var path = parameters.Paths.Directories.Src.CombineWithFilePath("CakeScriptsVersion.cake");
+    var path = parameters.Paths.Directories.Src.CombineWithFilePath("main.cake");
     System.IO.File.WriteAllText(path.FullPath, contents, Encoding.UTF8);
 });
 
