@@ -1,4 +1,4 @@
-public partial class BuildParameters
+public class BuildParameters
 {
     private readonly ICakeContext _context;
     private readonly BuildSettings _settings;
