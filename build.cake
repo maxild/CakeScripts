@@ -299,7 +299,7 @@ public static class CakeScripts
         )
     {{
         context.Information(""Maxfire.CakeScripts version {{0}} is being executed by this build."", Version);
-        return __GetParametersHelper__(context, buildSystem, settings, pathSettings);
+        return BuildParameters.__GetParametersHelper__(context, buildSystem, settings, pathSettings);
     }}
 
     public static string Version
