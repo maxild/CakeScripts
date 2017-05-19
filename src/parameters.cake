@@ -1,15 +1,12 @@
 public class BuildParameters
 {
     private readonly ICakeContext _context;
-    private readonly BuildSettings _settings;
     private readonly Func<BuildParameters, bool> _deployToCIFeedFunc;
-    private readonly Func<BuildParameters, bool> _deployToRCFeedFunc;
     private readonly Func<BuildParameters, bool> _deployToProdFeedFunc;
 
     private BuildParameters(ICakeContext context, BuildSettings settings)
     {
         _context = context;
-        _settings = settings;
         _deployToCIFeedFunc = settings.DeployToCIFeed ?? DefaultDeployToCIFeed;
         _deployToProdFeedFunc = settings.DeployToProdFeed ?? DefaultDeployToProdFeed;
     }
