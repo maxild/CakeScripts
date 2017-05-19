@@ -13,6 +13,7 @@
 #load "src/parameters.cake"
 #load "src/paths.cake"
 #load "src/projectjson.cake"
+#load "src/runhelpers.cake"
 #load "src/settings.cake"
 #load "src/toolrunner.cake"
 #load "src/utils.cake"
