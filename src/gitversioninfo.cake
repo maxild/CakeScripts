@@ -21,10 +21,12 @@ public class GitVersionInfo
     // --version-suffix on dotnet-pack
     public string VersionSuffix { get; private set; }
 
+    public bool IsPrerelease { get { return false == string.IsNullOrEmpty(VersionSuffix); }}
+
     public string NuGetVersion {
         get
         {
-            if (string.IsNullOrEmpty(VersionSuffix))
+            if (false == IsPrerelease)
             {
                 // official version
                 return MajorMinorPatch;
@@ -52,6 +54,7 @@ public class GitVersionInfo
         _context.Information("  MajorMinorPatch:              {0}", MajorMinorPatch);
         _context.Information("  VersionSuffix:                {0}", VersionSuffix);
         _context.Information("  NuGetVersion:                 {0}", NuGetVersion);
+        _context.Information("  IsPrerelease:                 {0}", IsPrerelease);
         _context.Information("  AssemblyVersion:              {0}", AssemblyVersion);
         _context.Information("  AssemblyFileVersion:          {0}", AssemblyFileVersion);
         _context.Information("  AssemblyInformationalVersion: {0}", AssemblyInformationalVersion);
