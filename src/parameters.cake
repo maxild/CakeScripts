@@ -16,14 +16,14 @@ public class BuildParameters
     public string Target { get; private set; }
     public string Configuration { get; private set; }
 
-    public bool ConfigurationIsDebug()
+    public bool ConfigurationIsDebug
     {
-        return Configuration.Equals("Debug", StringComparison.OrdinalIgnoreCase);
+        get { return Configuration.Equals("Debug", StringComparison.OrdinalIgnoreCase); }
     }
 
-    public bool ConfigurationIsRelease()
+    public bool ConfigurationIsRelease
     {
-        return Configuration.Equals("Release", StringComparison.OrdinalIgnoreCase);
+        get { return Configuration.Equals("Release", StringComparison.OrdinalIgnoreCase); }
     }
 
     public bool IsRunningOnUnix { get; private set; }
