@@ -39,6 +39,7 @@ public class GitRepoInfo
 
     // GitFlow has 2 kind of release line branches with merge-commits from release/hotfix that are tagged.
     public bool IsReleaseLineBranch { get { return IsMasterBranch || IsSupportBranch; } }
+    public bool IsDevelopmentLineBranch { get { return false == IsReleaseLineBranch; } }
 
     // git tag -l --points-at HEAD
     public string Tag { get; private set; }
