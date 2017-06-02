@@ -52,15 +52,16 @@ public class BuildParameters
 
     static bool DefaultDeployToCIFeed(BuildParameters parameters)
     {
-        // Either a tag or a commit of any branch except master and 'support/x.y.z' have been pushed to GitHub
-        return parameters.IsTagPush || false == parameters.Git.IsReleaseLineBranch;
+        // Only Debug builds are published to CI feed
+        // Any branch except master and 'support/x.y' have been pushed to GitHub
+        return parameters.ConfigurationIsDebug && (false == parameters.IsTagPush || false == parameters.Git.IsReleaseLineBranch);
     }
 
     static bool DefaultDeployToProdFeed(BuildParameters parameters)
     {
-
-        // A tag on either master or 'support/x.y' have been pushed to GitHub
-        return parameters.IsTagPush && parameters.Git.IsReleaseLineBranch;
+        // Only Release builds are published to production feed
+        // A tag (i.e. a published github release) on either master or 'support/x.y' have been created on GitHub
+        return parameters.ConfigurationIsRelease && parameters.IsTagPush && parameters.Git.IsReleaseLineBranch;
     }
 
     public GitHubRepositoryAndCredentials GitHub { get; private set; }
