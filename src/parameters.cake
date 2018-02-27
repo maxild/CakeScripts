@@ -118,7 +118,10 @@ public class BuildParameters
         ClearTempArtifacts();
         if (_context.DirectoryExists(Paths.Directories.Artifacts))
         {
-            _context.DeleteDirectory(Paths.Directories.Artifacts, true);
+            _context.DeleteDirectory(Paths.Directories.Artifacts, new DeleteDirectorySettings {
+                Recursive = true,
+                Force = true
+            });
         }
     }
 
@@ -126,7 +129,10 @@ public class BuildParameters
     {
         if (_context.DirectoryExists(Paths.Directories.TempArtifacts))
         {
-            _context.DeleteDirectory(Paths.Directories.TempArtifacts, true);
+            _context.DeleteDirectory(Paths.Directories.TempArtifacts, new DeleteDirectorySettings {
+                Recursive = true,
+                Force = true
+            });
         }
     }
 
