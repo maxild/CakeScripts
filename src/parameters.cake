@@ -406,7 +406,6 @@ public class BuildParameters
     }
 }
 
-
 public class Project
 {
     private readonly ICakeContext _context;
@@ -423,13 +422,65 @@ public class Project
         _configuration = configuration;
     }
 
-    public DirectoryPath Path { get; private set; }
+    public DirectoryPath Path { get; }
 
     public FilePath GetBuildArtifact(string buildArtifact)
     {
         var artifactPath = _context.Directory("bin") + _context.Directory(_configuration) + _context.File(buildArtifact);
         return Path.CombineWithFilePath(artifactPath);
     }
+
+    public FilePath GetCsProjPath(string csprojFileName)
+    {
+        return Path.CombineWithFilePath(csprojFileName);
+    }
+
+    public PackageReference[] GetPackageRefs(string csprojFileName)
+    {
+        // Get an IFile (cake object)
+        var csprojFile = _context.FileSystem.GetFile(GetCsProjPath(csprojFileName));
+
+        System.Xml.Linq.XDocument document;
+        using (var stream = csprojFile.OpenRead())
+        {
+            document = System.Xml.Linq.XDocument.Load(stream);
+        }
+
+        // if we are querying a pre-SDK csproj file, we need the namespace in the xname queries
+        var ns = document.Root?.Name.Namespace; // XName = FQ-name
+        var nsName = ns?.NamespaceName;         // namespace part of the fully qualified name
+
+        var packageReferenceXName = GetXName("PackageReference", nsName);
+        var includeXName =          GetXName("Include", nsName);
+        var versionXName =          GetXName("Version", nsName);
+
+        var packageReferences = document.Descendants(packageReferenceXName).Select(
+                    x => new PackageReference(
+                        name: x.Attribute("Include")?.Value ?? x.Element(includeXName)?.Value,
+                        version: x.Attribute("Version")?.Value ?? x.Element(versionXName)?.Value
+                    )).ToArray();
+
+        return packageReferences;
+    }
+
+    public string GetPackageRefVersionOf(string csprojFileName, string dependency)
+    {
+        return GetPackageRefs(csprojFileName).Single(x => x.Name.Equals(dependency, StringComparison.OrdinalIgnoreCase)).Version;
+    }
+
+    private static System.Xml.Linq.XName GetXName(string localName, string @namespace)
+    {
+        return @namespace == null ? System.Xml.Linq.XName.Get(localName) : System.Xml.Linq.XName.Get(localName, @namespace);
+    }
 }
 
-
+public class PackageReference
+{
+    public PackageReference(string name, string version)
+    {
+        Name = name;
+        Version = version;
+    }
+    public string Name { get; }
+    public string Version { get; }
+}
