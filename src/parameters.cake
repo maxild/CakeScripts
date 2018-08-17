@@ -430,15 +430,12 @@ public class Project
         return Path.CombineWithFilePath(artifactPath);
     }
 
-    public FilePath GetCsProjPath(string csprojFileName)
+    public PackageReference[] GetPackageRefs(string csprojFileName = null)
     {
-        return Path.CombineWithFilePath(csprojFileName);
-    }
+        var csprojFileNameToUse = csprojFileName ?? string.Concat(Path.GetDirectoryName(), ".csproj");
 
-    public PackageReference[] GetPackageRefs(string csprojFileName)
-    {
-        // Get an IFile (cake object)
-        var csprojFile = _context.FileSystem.GetFile(GetCsProjPath(csprojFileName));
+        // Get an IFile (cake object) for the csproj file
+        var csprojFile = _context.FileSystem.GetFile(Path.CombineWithFilePath(csprojFileNameToUse));
 
         System.Xml.Linq.XDocument document;
         using (var stream = csprojFile.OpenRead())
@@ -463,7 +460,7 @@ public class Project
         return packageReferences;
     }
 
-    public string GetPackageRefVersionOf(string csprojFileName, string dependency)
+    public string GetPackageRefVersionOf(string dependency, string csprojFileName = null)
     {
         return GetPackageRefs(csprojFileName).Single(x => x.Name.Equals(dependency, StringComparison.OrdinalIgnoreCase)).Version;
     }
