@@ -20,18 +20,18 @@ public class GitHubRepository
         {
             throw new ArgumentNullException("context");
         }
-        if (string.IsNullOrEmpty(owner))
+        if (isGitRepository && string.IsNullOrEmpty(owner))
         {
            throw new ArgumentException("RepositoryOwner cannot be null or empty.");
         }
-        if (string.IsNullOrEmpty(name))
+        if (isGitRepository && string.IsNullOrEmpty(name))
         {
            throw new ArgumentException("RepositoryName cannot be null or empty.");
         }
         _context = context;
         IsGitRepository = isGitRepository;
-        Owner = owner;
-        Name = name;
+        Owner = owner ?? string.Empty;
+        Name = name ?? string.Empty;
         HasHttpsUrl = hasHttpsUrl;
     }
 
