@@ -287,11 +287,14 @@ public class BuildParameters
             GitHub = new GitHubRepositoryAndCredentials(
                 context,
                 repo: gitHubRepository,
-                main: new GitHubRepository(
-                    context,
-                    owner: settings.MainRepositoryOwner,
-                    name: settings.RepositoryName,
-                    hasHttpsUrl: true),
+                main: gitHubRepository.IsGitRepository
+                    ? new GitHubRepository(
+                        context,
+                        true,
+                        owner: settings.MainRepositoryOwner,
+                        name: settings.RepositoryName,
+                        hasHttpsUrl: true)
+                    : gitHubRepository,
                 credentials: gitHubCredentials
             ),
 

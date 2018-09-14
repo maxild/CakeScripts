@@ -78,6 +78,28 @@ public class GitRepoInfo
 
         var git = new ToolRunner(context, new [] {"git.exe", "git"});
 
+        string isInsideWorkTree = git.Command("rev-parse --is-inside-work-tree");
+        bool isInGitReposWorkingTree = "true".Equals(isInsideWorkTree, StringComparison.OrdinalIgnoreCase);
+
+        if (false == isInGitReposWorkingTree)
+        {
+            return new GitRepoInfo(context)
+            {
+                Sha = "0000000000000000000000000000000000000000", // full sha with 40 chars
+                CommitId = "0000000",
+                CommitDate = new DateTimeOffset(),
+                Branch = string.Empty,
+                IsFeatureBranch = false,
+                IsDevelopBranch = false,
+                IsHotfixBranch = false,
+                IsReleaseCandidateBranch = false,
+                IsMasterBranch = false,
+                IsSupportBranch = false,
+                IsPullRequestBranch = false,
+                Tag = string.Empty
+            };
+        }
+
         string branch = git.Command("rev-parse --verify --abbrev-ref HEAD");
 
         // 2016-09-26T14:59:32+02:00

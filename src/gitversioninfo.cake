@@ -88,63 +88,73 @@ public class GitVersionInfo
 
         string majorMinorPatch, pkgVersion, semVer, infoVer;
 
-        // TODO: GitVersion running on Unix (.NET Core)
-        if (context.IsRunningOnWindows())
+        if (gitHubRepository.IsGitRepository)
         {
-            context.Information("Calculating Semantic Version...");
-
-            // In case the GitHub repository requires authentication (i.e
-            // is a private repository) we configure GitHub credentials with
-            // gitVersion tool
-            IDictionary<string, string> environmentVariables = null;
-            if (false == string.IsNullOrEmpty(gitHubCredentials.Password))
+            // TODO: GitVersion running on Unix (.NET Core)
+            if (context.IsRunningOnWindows())
             {
-                environmentVariables = new Dictionary<string, string>
+                context.Information("Calculating Semantic Version...");
+
+                // In case the GitHub repository requires authentication (i.e
+                // is a private repository) we configure GitHub credentials with
+                // gitVersion tool
+                IDictionary<string, string> environmentVariables = null;
+                if (false == string.IsNullOrEmpty(gitHubCredentials.Password))
                 {
-                    { "GITVERSION_REMOTE_USERNAME", gitHubCredentials.UserName },
-                    { "GITVERSION_REMOTE_PASSWORD", gitHubCredentials.Password }
+                    environmentVariables = new Dictionary<string, string>
+                    {
+                        { "GITVERSION_REMOTE_USERNAME", gitHubCredentials.UserName },
+                        { "GITVERSION_REMOTE_PASSWORD", gitHubCredentials.Password }
+                    };
                 };
-            };
 
-            if (false == buildSystem.IsLocalBuild)
-            {
-                // Running on AppVeyor, we have to patch private repos
-                //   GitVersion (i.e. libgit2) doesn't support SSH, so to avoid 'Unsupported URL protocol'
-                //   when GitVersion fetches from the remote, we have to convert to using HTTPS
-                //   See http://help.appveyor.com/discussions/kb/17-getting-gitversion-to-work-with-private-bitbucketgithub-repositories
-
-                if (false == gitHubRepository.HasHttpsUrl)
+                if (false == buildSystem.IsLocalBuild)
                 {
-                    new ToolRunner(context, new [] {"git.exe", "git"})
-                        .Command(string.Format("remote set-url origin {0}",
-                            gitHubRepository.HttpsUrl));
+                    // Running on AppVeyor, we have to patch private repos
+                    //   GitVersion (i.e. libgit2) doesn't support SSH, so to avoid 'Unsupported URL protocol'
+                    //   when GitVersion fetches from the remote, we have to convert to using HTTPS
+                    //   See http://help.appveyor.com/discussions/kb/17-getting-gitversion-to-work-with-private-bitbucketgithub-repositories
+
+                    if (false == gitHubRepository.HasHttpsUrl)
+                    {
+                        new ToolRunner(context, new [] {"git.exe", "git"})
+                            .Command(string.Format("remote set-url origin {0}",
+                                gitHubRepository.HttpsUrl));
+                    }
+
+                    // Running on AppVeyor, we have to patch/setup local tracking branches
+                    context.GitVersion(new GitVersionSettings
+                    {
+                        OutputType = GitVersionOutput.BuildServer,
+                        EnvironmentVariables = environmentVariables
+                    });
+
+                    majorMinorPatch = context.EnvironmentVariable("GitVersion_MajorMinorPatch");
+                    pkgVersion = context.EnvironmentVariable("GitVersion_LegacySemVerPadded");
+                    semVer = context.EnvironmentVariable("GitVersion_SemVer");
+                    infoVer = context.EnvironmentVariable("GitVersion_InformationalVersion");
                 }
 
-                // Running on AppVeyor, we have to patch/setup local tracking branches
-                context.GitVersion(new GitVersionSettings
+                var assertedVersions = context.GitVersion(new GitVersionSettings
                 {
-                    OutputType = GitVersionOutput.BuildServer,
+                    OutputType = GitVersionOutput.Json,
                     EnvironmentVariables = environmentVariables
                 });
 
-                majorMinorPatch = context.EnvironmentVariable("GitVersion_MajorMinorPatch");
-                pkgVersion = context.EnvironmentVariable("GitVersion_LegacySemVerPadded");
-                semVer = context.EnvironmentVariable("GitVersion_SemVer");
-                infoVer = context.EnvironmentVariable("GitVersion_InformationalVersion");
+                majorMinorPatch = assertedVersions.MajorMinorPatch;
+                pkgVersion = assertedVersions.LegacySemVerPadded;
+                semVer = assertedVersions.SemVer;
+                infoVer = assertedVersions.InformationalVersion;
+
+                context.Information("Calculated Semantic Version: {0}", semVer);
             }
-
-            var assertedVersions = context.GitVersion(new GitVersionSettings
+            else
             {
-                OutputType = GitVersionOutput.Json,
-                EnvironmentVariables = environmentVariables
-            });
-
-            majorMinorPatch = assertedVersions.MajorMinorPatch;
-            pkgVersion = assertedVersions.LegacySemVerPadded;
-            semVer = assertedVersions.SemVer;
-            infoVer = assertedVersions.InformationalVersion;
-
-            context.Information("Calculated Semantic Version: {0}", semVer);
+                majorMinorPatch = "0.0.0";
+                pkgVersion = string.Concat(majorMinorPatch, "-not-gitrepo");
+                semVer = string.Concat(majorMinorPatch, "-not.gitrepo");
+                infoVer = string.Concat(semVer, "+GitVersion.Was.Not.Called");
+            }
         }
         else
         {
