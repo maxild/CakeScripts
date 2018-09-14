@@ -78,7 +78,7 @@ public class GitRepoInfo
 
         var git = new ToolRunner(context, new [] {"git.exe", "git"});
 
-        string isInsideWorkTree = git.Command("rev-parse --is-inside-work-tree");
+        string isInsideWorkTree = git.SafeCommand("rev-parse --is-inside-work-tree");
         bool isInGitReposWorkingTree = "true".Equals(isInsideWorkTree, StringComparison.OrdinalIgnoreCase);
 
         if (false == isInGitReposWorkingTree)

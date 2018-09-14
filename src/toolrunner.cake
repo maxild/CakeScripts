@@ -104,28 +104,62 @@ public class ToolRunner
         return CommandHelper(string.Format(formatArgs, args));
     }
 
+    public string SafeCommand(string args)
+    {
+        return CommandHelper(args, neverThrowOnErrorStatusCode: true);
+    }
+
+    public string SafeCommand(string formatArgs, string arg1)
+    {
+        return CommandHelper(string.Format(formatArgs, arg1), neverThrowOnErrorStatusCode: true);
+    }
+
+    public string SafeCommand(string formatArgs, string arg1, string arg2)
+    {
+        return CommandHelper(string.Format(formatArgs, arg1, arg2), neverThrowOnErrorStatusCode: true);
+    }
+
+    public string SafeCommand(string formatArgs, string arg1, string arg2, string arg3)
+    {
+        return CommandHelper(string.Format(formatArgs, arg1, arg2, arg3), neverThrowOnErrorStatusCode: true);
+    }
+
+    public string SafeCommand(string formatArgs, params string[] args)
+    {
+        return CommandHelper(string.Format(formatArgs, args), neverThrowOnErrorStatusCode: true);
+    }
+
     /// <summary>
     ///  Run the tool with the given arguments.
     /// </summary>
     /// <param name="args">The arguments.</param>
     /// <returns>The output written to stdout.</returns>
-    string CommandHelper(string args)
+    string CommandHelper(string args, bool neverThrowOnErrorStatusCode = false)
     {
-        IEnumerable<string> stdout;
+        IEnumerable<string> stdout, stderr;
         int exit = _context.StartProcess(ToolPath,
             new ProcessSettings {
                 Arguments = args,
                 RedirectStandardOutput = true,
-            }, out stdout);
+                RedirectStandardError = true
+            }, out stdout, out stderr);
+
+        string stdoutResult = (string.Join(NewLineToken.ToString(), stdout) ?? string.Empty).Trim();
 
         if (exit != 0)
         {
-            throw new InvalidOperationException(string.Format("'{0} {1}' exited with status {2}, and message: {3}",
-                ToolPath, args, exit, string.Join(Environment.NewLine, stdout)));
+            string stderrResult = (string.Join(NewLineToken.ToString(), stderr) ?? string.Empty).Trim();
 
+            if (neverThrowOnErrorStatusCode) {
+                return stderrResult;
+            }
+
+            string message = string.IsNullOrEmpty(stderrResult) ? stdoutResult : stderrResult;
+
+            throw new InvalidOperationException(string.Format("'{0} {1}' exited with status {2}, and message: {3}",
+                ToolPath, args, exit, message));
         }
 
-        string result = (string.Join(NewLineToken.ToString(), stdout) ?? string.Empty).Trim();
-        return result;
+        return stdoutResult;
     }
 }
