@@ -290,7 +290,8 @@ public class BuildParameters
                 main: gitHubRepository.IsGitRepository
                     ? new GitHubRepository(
                         context,
-                        true,
+                        isGitRepository: true,
+                        isGithubRepository: true,
                         owner: settings.MainRepositoryOwner,
                         name: settings.RepositoryName,
                         hasHttpsUrl: true)

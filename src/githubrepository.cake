@@ -12,6 +12,7 @@ public class GitHubRepository
     public GitHubRepository(
         ICakeContext context,
         bool isGitRepository,
+        bool isGithubRepository,
         string owner,
         string name,
         bool hasHttpsUrl)
@@ -20,22 +21,25 @@ public class GitHubRepository
         {
             throw new ArgumentNullException("context");
         }
-        if (isGitRepository && string.IsNullOrEmpty(owner))
+        if (isGithubRepository && string.IsNullOrEmpty(owner))
         {
            throw new ArgumentException("RepositoryOwner cannot be null or empty.");
         }
-        if (isGitRepository && string.IsNullOrEmpty(name))
+        if (isGithubRepository && string.IsNullOrEmpty(name))
         {
            throw new ArgumentException("RepositoryName cannot be null or empty.");
         }
         _context = context;
         IsGitRepository = isGitRepository;
+        IsGithubRepository = isGithubRepository;
         Owner = owner ?? string.Empty;
         Name = name ?? string.Empty;
         HasHttpsUrl = hasHttpsUrl;
     }
 
     public bool IsGitRepository { get; private set; }
+
+    public bool IsGithubRepository { get; private set; }
 
     public string Owner { get; private set; }
 
@@ -94,13 +98,25 @@ public class GitHubRepository
         {
             return new GitHubRepository(
                 context,
-                false,
+                isGitRepository: false,
+                isGithubRepository: false,
                 name: string.Empty,
                 owner: string.Empty,
                 hasHttpsUrl: false);
         }
 
-        string remoteUrl = git.Command("remote get-url origin");
+        // TODO: Could use 'git config remote.origin.url' and not get error code
+        string remoteUrl = git.SafeCommand("remote get-url origin");
+
+        if (remoteUrl.StartsWith("fatal")) {
+            return new GitHubRepository(
+                context,
+                isGitRepository: true,
+                isGithubRepository: false,
+                name: string.Empty,
+                owner: string.Empty,
+                hasHttpsUrl: false);
+        }
 
         string repoOwner, repoName;
         bool repoHasHttpsUrl = false;
@@ -131,7 +147,8 @@ public class GitHubRepository
 
         return new GitHubRepository(
             context,
-            true,
+            isGitRepository: true,
+            isGithubRepository: true,
             name: repoName,
             owner: repoOwner,
             hasHttpsUrl: repoHasHttpsUrl);
