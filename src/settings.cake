@@ -59,7 +59,7 @@ public class BuildSettings
     private string _gitHubTokenVariable;
     public string GitHubTokenVariable
     {
-        get { return _gitHubTokenVariable ?? GITHUB_PASSWORD; }
+        get { return _gitHubTokenVariable ?? GITHUB_ACCESS_TOKEN; }
         set { _gitHubTokenVariable = value; }
     }
 
