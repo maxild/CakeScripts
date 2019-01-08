@@ -32,7 +32,7 @@ public class BuildSettings
 
     // default names
     const string GITHUB_PASSWORD           = "GITHUB_PASSWORD";
-    const string GITHUB_TOKEN              = "GITHUB_ACCESS_TOKEN";
+    const string GITHUB_ACCESS_TOKEN       = "GITHUB_ACCESS_TOKEN";
     const string GITHUB_USERNAME           = "GITHUB_USERNAME";
     const string MYGET_PASSWORD            = "MYGET_PASSWORD";
     const string MYGET_USERNAME            = "MYGET_USERNAME";
