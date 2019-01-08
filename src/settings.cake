@@ -32,6 +32,7 @@ public class BuildSettings
 
     // default names
     const string GITHUB_PASSWORD           = "GITHUB_PASSWORD";
+    const string GITHUB_TOKEN              = "GITHUB_ACCESS_TOKEN";
     const string GITHUB_USERNAME           = "GITHUB_USERNAME";
     const string MYGET_PASSWORD            = "MYGET_PASSWORD";
     const string MYGET_USERNAME            = "MYGET_USERNAME";
@@ -53,6 +54,13 @@ public class BuildSettings
     {
         get { return _gitHubPasswordVariable ?? GITHUB_PASSWORD; }
         set { _gitHubPasswordVariable = value; }
+    }
+
+    private string _gitHubTokenVariable;
+    public string GitHubTokenVariable
+    {
+        get { return _gitHubTokenVariable ?? GITHUB_PASSWORD; }
+        set { _gitHubTokenVariable = value; }
     }
 
     private string _myGetUserNameVariable;

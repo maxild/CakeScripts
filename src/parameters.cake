@@ -235,7 +235,8 @@ public class BuildParameters
 
         var gitHubCredentials = new Credentials(
             userName: settings.GitHubUserName ?? context.EnvironmentVariable(settings.GitHubUserNameVariable) ?? settings.MainRepositoryOwner,
-            password: context.EnvironmentVariable(settings.GitHubPasswordVariable) // secret
+            password: context.EnvironmentVariable(settings.GitHubPasswordVariable),
+            token: context.EnvironmentVariable(settings.GitHubTokenVariable)
         );
 
         // Resolve repositoryOwner, repositoryName and whether or not remote url is https:// based
@@ -301,7 +302,8 @@ public class BuildParameters
 
             MyGet = new Credentials(
                 userName: settings.MyGetUserName ?? context.EnvironmentVariable(settings.MyGetUserNameVariable) ?? "maxfire",
-                password: context.EnvironmentVariable(settings.MyGetPasswordVariable) //secret
+                password: context.EnvironmentVariable(settings.MyGetPasswordVariable),
+                token: null
             ),
 
             VersionInfo = versionInfo,
@@ -317,6 +319,7 @@ public class BuildParameters
     {
         public string UserName { get; private set; }
         public string Password { get; private set; }
+        public string Token { get; private set; }
 
         public string GetRequiredPassword()
         {
@@ -327,7 +330,16 @@ public class BuildParameters
             return Password;
         }
 
-        public Credentials(string userName, string password)
+        public string GetRequiredToken()
+        {
+            if (string.IsNullOrEmpty(Token))
+            {
+                throw new InvalidOperationException("Could not resolve token.");
+            }
+            return Token;
+        }
+
+        public Credentials(string userName, string password, string token)
         {
             if (string.IsNullOrEmpty(userName))
             {
@@ -335,6 +347,7 @@ public class BuildParameters
             }
             UserName = userName;
             Password = password; // empty, if no environment variable is configured in appveyor
+            Token = token;       // empty, if no environment variable is configured in appveyor
         }
     }
 
@@ -389,6 +402,7 @@ public class BuildParameters
 
         public string UserName { get { return _credentials.UserName; } }
         public string Password { get { return _credentials.Password; } }
+        public string Token { get { return _credentials.Token; } }
         public string MainRepositoryOwner { get { return _main.Owner; } }
         public string MainRepositoryName { get { return _main.Name; } }
         public string RepositoryOwner { get { return _repo.Owner; } }

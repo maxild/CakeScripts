@@ -98,13 +98,14 @@ public class GitVersionInfo
                 // In case the GitHub repository requires authentication (i.e
                 // is a private repository) we configure GitHub credentials with
                 // gitVersion tool
+                string password = gitHubCredentials.Password ?? gitHubCredentials.Token;
                 IDictionary<string, string> environmentVariables = null;
-                if (false == string.IsNullOrEmpty(gitHubCredentials.Password))
+                if (false == string.IsNullOrEmpty(password))
                 {
                     environmentVariables = new Dictionary<string, string>
                     {
                         { "GITVERSION_REMOTE_USERNAME", gitHubCredentials.UserName },
-                        { "GITVERSION_REMOTE_PASSWORD", gitHubCredentials.Password }
+                        { "GITVERSION_REMOTE_PASSWORD", password }
                     };
                 };
 
