@@ -403,12 +403,24 @@ public class BuildParameters
         public string UserName { get { return _credentials.UserName; } }
         public string Password { get { return _credentials.Password; } }
         public string Token { get { return _credentials.Token; } }
+
         public string MainRepositoryOwner { get { return _main.Owner; } }
         public string MainRepositoryName { get { return _main.Name; } }
         public string RepositoryOwner { get { return _repo.Owner; } }
         public string RepositoryName { get { return _repo.Name; } }
+
         public bool RepositoryHasHttpsUrl { get { return _repo.HasHttpsUrl; } }
         public string RepositoryHttpsUrl { get { return _repo.HttpsUrl;} }
+
+        public string GetRequiredPassword()
+        {
+            return _credentials.GetRequiredPassword();
+        }
+
+        public string GetRequiredToken()
+        {
+            return _credentials.GetRequiredToken();
+        }
 
         public void PrintToLog()
         {
