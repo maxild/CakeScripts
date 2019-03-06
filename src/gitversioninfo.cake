@@ -46,9 +46,9 @@ public class GitVersionInfo
 
     public string CakeVersion { get; private set; }
 
-    public string PatchedVersion { get { return string.Concat(MajorMinorPatch, "-*"); } }
+    public string BuildVersion { get; private set; }
 
-        public void PrintToLog()
+    public void PrintToLog()
     {
         _context.Information("Version Information:");
         _context.Information("  MajorMinorPatch:              {0}", MajorMinorPatch);
@@ -60,6 +60,7 @@ public class GitVersionInfo
         _context.Information("  AssemblyInformationalVersion: {0}", AssemblyInformationalVersion);
         _context.Information("  SemVer:                       {0}", SemVer);
         _context.Information("  Milestone:                    {0}", Milestone);
+        _context.Information("  BuildVersion:                 {0}", BuildVersion);
     }
 
     public static GitVersionInfo Calculate(
@@ -84,6 +85,12 @@ public class GitVersionInfo
         if (gitHubRepository == null)
         {
             throw new ArgumentNullException("gitHubRepository");
+        }
+
+        // local function
+        string EnvironmentVariable(string variable)
+        {
+            return context.EnvironmentVariable(variable);
         }
 
         string majorMinorPatch, pkgVersion, semVer, infoVer;
@@ -130,10 +137,10 @@ public class GitVersionInfo
                         EnvironmentVariables = environmentVariables
                     });
 
-                    majorMinorPatch = context.EnvironmentVariable("GitVersion_MajorMinorPatch");
-                    pkgVersion = context.EnvironmentVariable("GitVersion_LegacySemVerPadded");
-                    semVer = context.EnvironmentVariable("GitVersion_SemVer");
-                    infoVer = context.EnvironmentVariable("GitVersion_InformationalVersion");
+                    majorMinorPatch = EnvironmentVariable("GitVersion_MajorMinorPatch");
+                    pkgVersion = EnvironmentVariable("GitVersion_LegacySemVerPadded");
+                    semVer = EnvironmentVariable("GitVersion_SemVer");
+                    infoVer = EnvironmentVariable("GitVersion_InformationalVersion");
                 }
 
                 var assertedVersions = context.GitVersion(new GitVersionSettings
@@ -168,6 +175,21 @@ public class GitVersionInfo
         string cakeAssemblyVersion = typeof(ICakeContext).Assembly.GetName().Version.ToString();
         string cakeVersion = StringUtils.TrimEnd(cakeAssemblyVersion, ".0");
 
+        // AppVeyor build version (Update-AppveyorBuild -Version $buildVersion)
+        string buildVersion = "local";
+        if (buildSystem.AppVeyor.IsRunningOnAppVeyor)
+        {
+            var apiUrl = EnvironmentVariable("APPVEYOR_API_URL") + "api/build";
+            string buildNumber = EnvironmentVariable("APPVEYOR_BUILD_ID");
+            // buildVersion must be unique, otherwise request to appveyor fails
+            buildVersion = $"{semVer}.build.{buildNumber}"; // we could use fullSemVer, but semVer seems OK
+            var statusCode = UpdateAppveyorBuildVersion(apiUrl, buildVersion);
+            if (statusCode != System.Net.HttpStatusCode.OK)
+            {
+                context.Warning("UpdateAppveyorBuildVersion: Request failed. Received status {0}", statusCode);
+            }
+        }
+
         return new GitVersionInfo(context)
         {
             MajorMinorPatch = majorMinorPatch,
@@ -176,8 +198,30 @@ public class GitVersionInfo
             AssemblyFileVersion = string.Concat(majorMinorPatch, ".0"),
             AssemblyInformationalVersion = infoVer,
             SemVer = semVer,
-            CakeVersion = cakeVersion
+            CakeVersion = cakeVersion,
+            BuildVersion = buildVersion
         };
+    }
+
+    private static System.Net.HttpStatusCode UpdateAppveyorBuildVersion(string apiUrl, string buildVersion)
+    {
+        var request = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(apiUrl);
+        request.Method = "PUT";
+
+        var data = $"{{ \"version\": \"{buildVersion}\" }}";
+        var bytes = System.Text.Encoding.UTF8.GetBytes(data);
+        request.ContentLength = bytes.Length;
+        request.ContentType = "application/json";
+
+        using (var writeStream = request.GetRequestStream())
+        {
+            writeStream.Write(bytes, 0, bytes.Length);
+        }
+
+        using (var response = (System.Net.HttpWebResponse)request.GetResponse())
+        {
+            return response.StatusCode;
+        }
     }
 }
 
