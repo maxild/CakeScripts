@@ -180,7 +180,7 @@ public class GitVersionInfo
         if (buildSystem.AppVeyor.IsRunningOnAppVeyor)
         {
             var apiUrl = EnvironmentVariable("APPVEYOR_API_URL") + "api/build";
-            string buildNumber = EnvironmentVariable("APPVEYOR_BUILD_ID");
+            string buildNumber = EnvironmentVariable("APPVEYOR_BUILD_NUMBER");
             // buildVersion must be unique, otherwise request to appveyor fails
             buildVersion = $"{semVer}.build.{buildNumber}"; // we could use fullSemVer, but semVer seems OK
             var statusCode = UpdateAppveyorBuildVersion(apiUrl, buildVersion);
