@@ -124,23 +124,22 @@ public class GitVersionInfo
                 if (false == string.IsNullOrEmpty(gitHubCredentials.UserName)) {
                     context.Information("GitHub UserName '{0}' was found.", gitHubCredentials.UserName);
 
-                    // We use password before using access token, because libgit2sharp seem to handle this the best
-                    if (false == string.IsNullOrEmpty(gitHubCredentials.Password ))
+                    if (false == string.IsNullOrEmpty(gitHubCredentials.Token))
+                    {
+                        context.Information("Environment variable GITHUB_ACCESS_TOKEN was found.");
+                        environmentVariables = new Dictionary<string, string>
+                        {
+                            { "GITVERSION_REMOTE_USERNAME", gitHubCredentials.Token },
+                            { "GITVERSION_REMOTE_PASSWORD", string.Empty }
+                        };
+                    }
+                    else if (false == string.IsNullOrEmpty(gitHubCredentials.Password ))
                     {
                         context.Information("Environment variable GITHUB_PASSWORD was found.");
                         environmentVariables = new Dictionary<string, string>
                         {
                             { "GITVERSION_REMOTE_USERNAME", gitHubCredentials.UserName },
                             { "GITVERSION_REMOTE_PASSWORD", gitHubCredentials.Password }
-                        };
-                    }
-                    else if (false == string.IsNullOrEmpty(gitHubCredentials.Token))
-                    {
-                        context.Information("Environment variable GITHUB_ACCESS_TOKEN was found.");
-                        environmentVariables = new Dictionary<string, string>
-                        {
-                            { "GITVERSION_REMOTE_USERNAME", gitHubCredentials.UserName },
-                            { "GITVERSION_REMOTE_PASSWORD", gitHubCredentials.Token }
                         };
                     }
                     else {
