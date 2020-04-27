@@ -1,7 +1,4 @@
-// For reasons of running v4 betal7 see the followi g GH issues
-//   https://github.com/GitTools/GitVersion/issues/632
-//   https://github.com/GitTools/GitVersion/issues/695
-#tool nuget:?package=GitVersion.CommandLine&version=4.0.0-beta0012
+#tool nuget:?package=GitVersion.CommandLine&version=5.2.4
 
 public class GitVersionInfo
 {
