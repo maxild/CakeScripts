@@ -1,4 +1,4 @@
-#tool nuget:?package=GitVersion.CommandLine&version=5.0.0
+#tool nuget:?package=GitVersion.CommandLine&version=5.2.4
 
 public class GitVersionInfo
 {
@@ -131,7 +131,9 @@ public class GitVersionInfo
                     context.GitVersion(new GitVersionSettings
                     {
                         OutputType = GitVersionOutput.BuildServer,
-                        EnvironmentVariables = environmentVariables
+                        EnvironmentVariables = environmentVariables,
+                        //NoFetch = true,
+                        //ArgumentCustomization = args => args.Append("/nonormalize")
                     });
 
                     majorMinorPatch = EnvironmentVariable("GitVersion_MajorMinorPatch");
@@ -143,7 +145,9 @@ public class GitVersionInfo
                 var assertedVersions = context.GitVersion(new GitVersionSettings
                 {
                     OutputType = GitVersionOutput.Json,
-                    EnvironmentVariables = environmentVariables
+                    EnvironmentVariables = environmentVariables,
+                    //NoFetch = true,
+                    //ArgumentCustomization = args => args.Append("/nonormalize")
                 });
 
                 majorMinorPatch = assertedVersions.MajorMinorPatch;
