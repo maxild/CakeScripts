@@ -215,7 +215,7 @@ public class GitVersionInfo
         }
 
         string gitVersionToolInfo =
-            new ToolRunner(context, new [] {"gitVersion.exe", "gitVersion"})
+            new ToolRunner(context, new [] { "GitVersion.exe", "dotnet-gitversion", "dotnet-gitversion.exe" })
                 .SafeCommand("/version")
                 .Split(new [] { '\r', '\n' })
                 .FirstOrDefault();
