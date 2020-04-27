@@ -34,7 +34,7 @@ public class GitVersionInfo
 
     // --version-suffix on dotnet-pack
     public string VersionSuffix { get; private set; }
-it
+
     public bool IsPrerelease { get { return false == string.IsNullOrEmpty(VersionSuffix); }}
 
     public string NuGetVersion {
