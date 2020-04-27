@@ -104,22 +104,31 @@ public class GitVersionInfo
                 // such that libgit2sharp can be configured via env vars
                 IDictionary<string, string> environmentVariables = null;
 
-                if (false == string.IsNullOrEmpty(gitHubCredentials.Token))
-                {
-                    environmentVariables = new Dictionary<string, string>
+                if (false == string.IsNullOrEmpty(gitHubCredentials.UserName)) {
+
+                    if (false == string.IsNullOrEmpty(gitHubCredentials.Token))
                     {
-                        { "GITVERSION_REMOTE_USERNAME", gitHubCredentials.Token },
-                        { "GITVERSION_REMOTE_PASSWORD", string.Empty }
-                    };
+                        environmentVariables = new Dictionary<string, string>
+                        {
+                            { "GITVERSION_REMOTE_USERNAME", gitHubCredentials.UserName },
+                            { "GITVERSION_REMOTE_PASSWORD", gitHubCredentials.Token }
+                        };
+                    }
+                    else if (false == string.IsNullOrEmpty(gitHubCredentials.Password ))
+                    {
+                        environmentVariables = new Dictionary<string, string>
+                        {
+                            { "GITVERSION_REMOTE_USERNAME", gitHubCredentials.UserName },
+                            { "GITVERSION_REMOTE_PASSWORD", gitHubCredentials.Password }
+                        };
+                    }
+                    else {
+                        context.Information("Environment variables GITHUB_PASSWORD or GITHUB_ACCESS_TOKEN cannot be found.");
+                    }
                 }
-                else if (false == string.IsNullOrEmpty(gitHubCredentials.Password ))
-                {
-                    environmentVariables = new Dictionary<string, string>
-                    {
-                        { "GITVERSION_REMOTE_USERNAME", gitHubCredentials.UserName },
-                        { "GITVERSION_REMOTE_PASSWORD", gitHubCredentials.Password }
-                    };
-                };
+                else {
+                    throw new InvalidOperationException("UNEXPECTED: No GitHub UserName can be found.");
+                }
 
                 if (false == buildSystem.IsLocalBuild)
                 {
