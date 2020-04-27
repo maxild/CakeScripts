@@ -15,7 +15,7 @@
 //    * NoNormalize switch
 //    * use password instead of access token (BUT this doesn't work with 2FA!!!)
 //    * staying on gitVersion 5.0.1 (uses libgit2sharp 0.26.0)
-#tool nuget:?package=GitVersion.CommandLine&version=5.0.1
+#tool nuget:?package=GitVersion.CommandLine&version=5.1.0
 
 public class GitVersionInfo
 {
