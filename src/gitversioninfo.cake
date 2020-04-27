@@ -153,8 +153,7 @@ public class GitVersionInfo
                     throw new InvalidOperationException("UNEXPECTED: No GitHub UserName can be found.");
                 }
 
-                // TODO: Restore this if...!!!!
-                //if (false == buildSystem.IsLocalBuild)
+                if (false == buildSystem.IsLocalBuild)
                 {
                     // Running on AppVeyor, we have to patch private repos
                     //   GitVersion (i.e. libgit2) doesn't support SSH, so to avoid 'Unsupported URL protocol'
@@ -214,6 +213,10 @@ public class GitVersionInfo
             infoVer = string.Concat(semVer, "+GitVersion.Was.Not.Called");
         }
 
+        // NOTE:
+        // GitVersion.exe can be in path (e.g. choco install)
+        // dotnet-gitversion is probably .NET Core cli tool (could be removed)
+        // dotnet-gitversion.exe is created by Cake.DotNetTool.Module (local/global .NET Core 3.x tool)
         string gitVersionToolInfo =
             new ToolRunner(context, new [] { "GitVersion.exe", "dotnet-gitversion", "dotnet-gitversion.exe" })
                 .SafeCommand("/version")
