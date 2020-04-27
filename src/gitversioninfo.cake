@@ -1,4 +1,4 @@
-#tool nuget:?package=GitVersion.CommandLine&version=5.0.1
+#tool nuget:?package=GitVersion.CommandLine&version=5.1.0
 
 public class GitVersionInfo
 {
