@@ -15,7 +15,8 @@
 //    * NoNormalize switch
 //    * use password instead of access token (BUT this doesn't work with 2FA!!!)
 //    * staying on gitVersion 5.0.1 (uses libgit2sharp 0.26.0)
-#tool nuget:?package=GitVersion.CommandLine&version=5.1.0
+// TODO: Uncomment this
+//#tool nuget:?package=GitVersion.CommandLine&version=5.1.0
 
 public class GitVersionInfo
 {
@@ -59,6 +60,8 @@ public class GitVersionInfo
     public string Milestone { get { return MajorMinorPatch; } }
 
     public string CakeVersion { get; private set; }
+
+    public string GitVersionToolInfo { get; private set; }
 
     public string BuildVersion { get; private set; }
 
@@ -211,6 +214,12 @@ public class GitVersionInfo
             infoVer = string.Concat(semVer, "+GitVersion.Was.Not.Called");
         }
 
+        string gitVersionToolInfo =
+            new ToolRunner(context, new [] {"gitVersion.exe", "gitVersion"})
+                .SafeCommand("/version");
+                .Split(new [] { '\r', '\n' })
+                .FirstOrDefault();
+
         string cakeAssemblyVersion = typeof(ICakeContext).Assembly.GetName().Version.ToString();
         string cakeVersion = StringUtils.TrimEnd(cakeAssemblyVersion, ".0");
 
@@ -238,6 +247,7 @@ public class GitVersionInfo
             AssemblyInformationalVersion = infoVer,
             SemVer = semVer,
             CakeVersion = cakeVersion,
+            GitVersionToolInfo = gitVersionToolInfo,
             BuildVersion = buildVersion
         };
     }
