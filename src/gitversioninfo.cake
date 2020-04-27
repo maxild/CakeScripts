@@ -1,4 +1,21 @@
-#tool nuget:?package=GitVersion.CommandLine&version=5.2.4
+// We cannot fetch because for some (unknown) reason libgit2sharp 0.26.1 throws
+//  LibGit2Sharp.LibGit2SharpException: UsernamePasswordCredentials contains a null Username or Password.
+//    at LibGit2Sharp.Core.Ensure.HandleError(Int32 result)
+//    at LibGit2Sharp.Core.Ensure.ZeroResult(Int32 result)
+//    at LibGit2Sharp.Core.Proxy.git_remote_fetch(RemoteHandle remote, IEnumerable`1 refSpecs, GitFetchOptions fetchOptions, String logMessage)
+//    at LibGit2Sharp.Commands.Fetch(Repository repository, String remote, IEnumerable`1 refspecs, FetchOptions options, String logMessage)
+//    at GitVersion.Helpers.GitRepositoryHelper.Fetch(ILog log, AuthenticationInfo authentication, Remote remote, Repository repo)
+//    at GitVersion.Helpers.GitRepositoryHelper.NormalizeGitDirectory(ILog log, IEnvironment environment, String gitDirectory, AuthenticationInfo authentication, Boolean noFetch, String currentBranch, Boolean isDynamicRepository)
+//    at GitVersion.GitPreparer.NormalizeGitDirectory(AuthenticationInfo auth, String targetBranch, String gitDirectory, Boolean isDynamicRepository)
+//    at GitVersion.GitPreparer.PrepareInternal(Boolean normalizeGitDirectory, String currentBranch, Boolean shouldCleanUpRemotes)
+//    at GitVersion.GitPreparer.Prepare()
+//    at GitVersion.GitVersionExecutor.VerifyArgumentsAndRun(Arguments arguments)
+// Options
+//    * Nofetch switch
+//    * NoNormalize switch
+//    * use password instead of access token (BUT this doesn't work with 2FA!!!)
+//    * staying on gitVersion 5.0.1 (uses libgit2sharp 0.26.0)
+#tool nuget:?package=GitVersion.CommandLine&version=5.0.1
 
 public class GitVersionInfo
 {
@@ -17,7 +34,7 @@ public class GitVersionInfo
 
     // --version-suffix on dotnet-pack
     public string VersionSuffix { get; private set; }
-
+it
     public bool IsPrerelease { get { return false == string.IsNullOrEmpty(VersionSuffix); }}
 
     public string NuGetVersion {
@@ -107,22 +124,23 @@ public class GitVersionInfo
                 if (false == string.IsNullOrEmpty(gitHubCredentials.UserName)) {
                     context.Information("GitHub UserName '{0}' was found.", gitHubCredentials.UserName);
 
-                    if (false == string.IsNullOrEmpty(gitHubCredentials.Token))
-                    {
-                        context.Information("Environment variable GITHUB_ACCESS_TOKEN was found.");
-                        environmentVariables = new Dictionary<string, string>
-                        {
-                            { "GITVERSION_REMOTE_USERNAME", gitHubCredentials.UserName },
-                            { "GITVERSION_REMOTE_PASSWORD", gitHubCredentials.Token }
-                        };
-                    }
-                    else if (false == string.IsNullOrEmpty(gitHubCredentials.Password ))
+                    // We use password before using access token, because libgit2sharp seem to handle this the best
+                    if (false == string.IsNullOrEmpty(gitHubCredentials.Password ))
                     {
                         context.Information("Environment variable GITHUB_PASSWORD was found.");
                         environmentVariables = new Dictionary<string, string>
                         {
                             { "GITVERSION_REMOTE_USERNAME", gitHubCredentials.UserName },
                             { "GITVERSION_REMOTE_PASSWORD", gitHubCredentials.Password }
+                        };
+                    }
+                    else if (false == string.IsNullOrEmpty(gitHubCredentials.Token))
+                    {
+                        context.Information("Environment variable GITHUB_ACCESS_TOKEN was found.");
+                        environmentVariables = new Dictionary<string, string>
+                        {
+                            { "GITVERSION_REMOTE_USERNAME", gitHubCredentials.UserName },
+                            { "GITVERSION_REMOTE_PASSWORD", gitHubCredentials.Token }
                         };
                     }
                     else {
