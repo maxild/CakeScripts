@@ -105,9 +105,11 @@ public class GitVersionInfo
                 IDictionary<string, string> environmentVariables = null;
 
                 if (false == string.IsNullOrEmpty(gitHubCredentials.UserName)) {
+                    context.Information("GitHub UserName '{0}' was found.", gitHubCredentials.UserName);
 
                     if (false == string.IsNullOrEmpty(gitHubCredentials.Token))
                     {
+                        context.Information("Environment variable GITHUB_ACCESS_TOKEN was found.");
                         environmentVariables = new Dictionary<string, string>
                         {
                             { "GITVERSION_REMOTE_USERNAME", gitHubCredentials.UserName },
@@ -116,6 +118,7 @@ public class GitVersionInfo
                     }
                     else if (false == string.IsNullOrEmpty(gitHubCredentials.Password ))
                     {
+                        context.Information("Environment variable GITHUB_PASSWORD was found.");
                         environmentVariables = new Dictionary<string, string>
                         {
                             { "GITVERSION_REMOTE_USERNAME", gitHubCredentials.UserName },
