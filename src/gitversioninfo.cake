@@ -150,7 +150,8 @@ public class GitVersionInfo
                     throw new InvalidOperationException("UNEXPECTED: No GitHub UserName can be found.");
                 }
 
-                if (false == buildSystem.IsLocalBuild)
+                // TODO: Restore this if...!!!!
+                //if (false == buildSystem.IsLocalBuild)
                 {
                     // Running on AppVeyor, we have to patch private repos
                     //   GitVersion (i.e. libgit2) doesn't support SSH, so to avoid 'Unsupported URL protocol'
