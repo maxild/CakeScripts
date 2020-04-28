@@ -215,12 +215,12 @@ public class GitVersionInfo
 
         // NOTE:
         // GitVersion.exe can be in path (e.g. choco install)
-        // dotnet-gitversion is probably .NET Core cli tool (could be removed)
+        // dotnet-gitversion is probably .NET Core cli tool, or is it dotnet-tool on *nix???
         // dotnet-gitversion.exe is created by Cake.DotNetTool.Module (local/global .NET Core 3.x tool)
         string gitVersionToolInfo =
-            // NOTE: AppVeyor has GitVersion.exe installed globally
-            //new ToolRunner(context, new [] { "GitVersion.exe", "dotnet-gitversion", "dotnet-gitversion.exe" })
-            new ToolRunner(context, new [] { "dotnet-gitversion", "dotnet-gitversion.exe" })
+            // NOTE: AppVeyor has GitVersion.exe installed globally, we need to
+            //       make GitVersion.exe the last executable to search for
+            new ToolRunner(context, new [] { "dotnet-gitversion", "dotnet-gitversion.exe", "GitVersion.exe" })
                 .SafeCommand("/version")
                 .Split(new [] { '\r', '\n' })
                 .FirstOrDefault();
