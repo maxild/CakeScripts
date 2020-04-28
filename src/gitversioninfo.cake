@@ -170,6 +170,7 @@ public class GitVersionInfo
                     // Running on AppVeyor, we have to patch/setup local tracking branches
                     context.GitVersion(new GitVersionSettings
                     {
+                        ToolPath = context.Tools.Resolve("dotnet-gitversion") ?? context.Tools.Resolve("dotnet-gitversion.exe"),
                         OutputType = GitVersionOutput.BuildServer,
                         EnvironmentVariables = environmentVariables,
                         //NoFetch = true,
@@ -184,10 +185,9 @@ public class GitVersionInfo
 
                 var assertedVersions = context.GitVersion(new GitVersionSettings
                 {
+                    ToolPath = context.Tools.Resolve("dotnet-gitversion") ?? context.Tools.Resolve("dotnet-gitversion.exe"),
                     OutputType = GitVersionOutput.Json,
                     EnvironmentVariables = environmentVariables,
-                    //NoFetch = true,
-                    //ArgumentCustomization = args => args.Append("/nonormalize")
                 });
 
                 majorMinorPatch = assertedVersions.MajorMinorPatch;
@@ -218,7 +218,9 @@ public class GitVersionInfo
         // dotnet-gitversion is probably .NET Core cli tool (could be removed)
         // dotnet-gitversion.exe is created by Cake.DotNetTool.Module (local/global .NET Core 3.x tool)
         string gitVersionToolInfo =
-            new ToolRunner(context, new [] { "GitVersion.exe", "dotnet-gitversion", "dotnet-gitversion.exe" })
+            // NOTE: AppVeyor has GitVersion.exe installed globally
+            //new ToolRunner(context, new [] { "GitVersion.exe", "dotnet-gitversion", "dotnet-gitversion.exe" })
+            new ToolRunner(context, new [] { "dotnet-gitversion", "dotnet-gitversion.exe" })
                 .SafeCommand("/version")
                 .Split(new [] { '\r', '\n' })
                 .FirstOrDefault();
