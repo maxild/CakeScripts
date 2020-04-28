@@ -170,7 +170,11 @@ public class GitVersionInfo
                     // Running on AppVeyor, we have to patch/setup local tracking branches
                     context.GitVersion(new GitVersionSettings
                     {
-                        ToolPath = context.Tools.Resolve("dotnet-gitversion") ?? context.Tools.Resolve("dotnet-gitversion.exe"),
+                        // NOTE: AppVeyor has GitVersion.exe installed globally, we need to
+                        //       make GitVersion.exe the last executable to search for
+                        ToolPath = context.Tools.Resolve("dotnet-gitversion") ??
+                                   context.Tools.Resolve("dotnet-gitversion.exe") ??
+                                   context.Tools.Resolve("GitVersion.exe"),
                         OutputType = GitVersionOutput.BuildServer,
                         EnvironmentVariables = environmentVariables,
                         //NoFetch = true,
@@ -185,7 +189,11 @@ public class GitVersionInfo
 
                 var assertedVersions = context.GitVersion(new GitVersionSettings
                 {
-                    ToolPath = context.Tools.Resolve("dotnet-gitversion") ?? context.Tools.Resolve("dotnet-gitversion.exe"),
+                    // NOTE: AppVeyor has GitVersion.exe installed globally, we need to
+                    //       make GitVersion.exe the last executable to search for
+                    ToolPath = context.Tools.Resolve("dotnet-gitversion") ??
+                               context.Tools.Resolve("dotnet-gitversion.exe") ??
+                               context.Tools.Resolve("GitVersion.exe"),
                     OutputType = GitVersionOutput.Json,
                     EnvironmentVariables = environmentVariables,
                 });
