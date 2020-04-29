@@ -77,7 +77,6 @@ Task("AppVeyor")
     .IsDependentOn("Print-AppVeyor-Environment-Variables")
     .IsDependentOn("Upload-AppVeyor-Artifacts")
     .IsDependentOn("Publish")
-    //.IsDependentOn("Publish-GitHub-Release")
     .Finally(() =>
 {
     if (publishingError)
@@ -86,20 +85,13 @@ Task("AppVeyor")
     }
 });
 
-Task("ReleaseNotes")
-  .IsDependentOn("Create-Release-Notes");
+Task("Version").Does(() => parameters.VersionInfo.PrintToLog());
 
-Task("Info")
-    .Does(() =>
-{
-    parameters.PrintToLog();
-});
+Task("Info").Does(() => parameters.PrintToLog());
 
-Task("Clean")
-    .Does(() =>
-{
-    parameters.ClearArtifacts();
-});
+Task("ReleaseNotes").IsDependentOn("Create-Release-Notes");
+
+Task("Clean").Does(() => parameters.ClearArtifacts());
 
 Task("Build")
     .IsDependentOn("Clean")
@@ -175,33 +167,6 @@ Task("Create-Release-Notes")
             Milestone         = parameters.VersionInfo.Milestone,
             TargetCommitish   = "master"
         });
-});
-
-// Invoked on AppVeyor, when tag is pushed ('Publish Release' on GitHub Web UI)
-Task("Publish-GitHub-Release")
-    .IsDependentOn("Package")
-    .WithCriteria(() => parameters.ShouldDeployToProdFeed)
-    .Does(() =>
-{
-    if (DirectoryExists(parameters.Paths.Directories.Artifacts))
-    {
-        foreach (var nupkgFile in GetFiles(parameters.Paths.Directories.Artifacts + "/*.nupkg"))
-        {
-            GitReleaseManagerAddAssets(parameters.GitHub.UserName, parameters.GitHub.Password,
-                                       parameters.GitHub.RepositoryOwner, parameters.GitHub.RepositoryName,
-                                       parameters.VersionInfo.Milestone, nupkgFile.ToString());
-        }
-    }
-
-    // Close milestone
-    GitReleaseManagerClose(parameters.GitHub.UserName, parameters.GitHub.Password,
-                           parameters.GitHub.RepositoryOwner, parameters.GitHub.RepositoryName,
-                           parameters.VersionInfo.Milestone);
-})
-.OnError(exception =>
-{
-    Information("Publish-GitHub-Release Task failed, but continuing with next Task...");
-    publishingError = true;
 });
 
 ///////////////////////////////////////////////////////////////////////////////
