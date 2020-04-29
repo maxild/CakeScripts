@@ -88,10 +88,10 @@ Function Install-NetCoreTool {
     if ((!$ToolPathExists) -or (!$ExePathExists)) {
 
         if ($ExePathExists) {
-            & dotnet tool uninstall --tool-path $TOOLS_DIR GitReleaseManager.Tool
+            & dotnet tool uninstall --tool-path $TOOLS_DIR GitReleaseManager.Tool | Out-Null
         }
 
-        & dotnet tool install --tool-path $TOOLS_DIR --version $Version --configfile NuGet.public.config $PackageId
+        & dotnet tool install --tool-path $TOOLS_DIR --version $Version --configfile NuGet.public.config $PackageId | Out-Null
         if ($LASTEXITCODE -ne 0) {
             "Failed to install $PackageId"
             exit $LASTEXITCODE
