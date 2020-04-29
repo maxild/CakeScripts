@@ -105,7 +105,6 @@ public class GitHubRepository
                 hasHttpsUrl: false);
         }
 
-        // TODO: Could use 'git config remote.origin.url' and not get error code
         string remoteUrl = git.SafeCommand("remote get-url origin");
 
         if (remoteUrl.StartsWith("fatal")) {

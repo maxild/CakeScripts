@@ -1,9 +1,4 @@
 ///////////////////////////////////////////////////////////////////////////////
-// TOOLS
-///////////////////////////////////////////////////////////////////////////////
-#tool "nuget:?package=gitreleasemanager&version=0.8.0"
-
-///////////////////////////////////////////////////////////////////////////////
 // SCRIPTS (load all files to check compilation)
 ///////////////////////////////////////////////////////////////////////////////
 #load "src/failurehelpers.cake"
@@ -52,12 +47,13 @@ Setup(context =>
         context.Log.Verbosity = Verbosity.Diagnostic;
     }
 
-    Information("Building version {0} of {1} ({2}, {3}) using version {4} of Cake. (IsTagPush: {5})",
+    Information("Building version {0} of {1} ({2}, {3}) using version {4} of Cake and version {5} of GitVersion. (IsTagPush: {6})",
         parameters.VersionInfo.SemVer,
         parameters.ProjectName,
         parameters.Configuration,
         parameters.Target,
         parameters.VersionInfo.CakeVersion,
+        parameters.VersionInfo.GitVersionVersion,
         parameters.IsTagPush);
 });
 
@@ -171,47 +167,6 @@ Task("Publish")
 {
     Information("Publish Task failed, but continuing with next Task...");
     publishingError = true;
-});
-
-// About exporting release notes to nuspec (nuget package):
-// 1: GRM has the concept of an export command, which will take the generated release notes from
-// the GitHub release and place them into a markdown format, but that workflow requires the
-// GitHub Release to be created in the first place. In this workflow, GitHub releases are the
-// single source of truth.
-// 2: But it would be neat to have it operate in an “upcoming milestone mode” for notes export,
-// where it only exported what would end up in an upcoming release.
-// 1: Yes, exporting the notes from a single milestone is something that I have thought about adding,
-// rather than everything. I would be happy for you to create an issue to that effect.
-// 2: I have never used milestones on GitHub before. Is that a prerequisite for GRM to operate (at all)?
-// 1: Yes, milestones are a pre-requisite, unless you use something like GitReleaseNotes to
-// generate the release notes, which would then be passed into GitReleaseManager as an input parameter.
-// 1: There is a distinction between what I think you are calling a release (=deployment), and what
-// GRM calls a release. In GRM a release is a created entry in GitHub, where the notes are created
-// either from release notes passed in, or created from milestone issues in GitHub.
-// 2: So it’s not possible to just have the notes be generated from the last tag, almost like how
-// GitVersion operates?
-// 1: Yes, you can, but that would be using the GitReleaseNotes tool, not GitReleaseManager. One
-// creates the releasenotes (GitReleaseNotes) and another creates the release (GitReleaseManager)
-// using the notes that are either passed in, or generated from milestone issues. again, two separate
-// functions.
-
-// During this build, GitReleaseManager is executed using the export command, so that all release notes can be bundled into the application
-Task("ExportGitHubReleaseNotes")
-    .Does(() =>
-{
-    // Export all the release notes for a given repository on GitHub. The generated file will be in Markdown format, and the contents of the
-    // file is configurable using the GitReleaseManager.yaml file, per repository.
-
-    // GitReleaseManager.exe export
-    //    -fileOutputPath ./CHANGELOG.md -targetDirectory $rootDirectory
-    //    -u $env:GitHubUserName -p $env:GitHubPassword
-    //    -o chocolatey -r chocolateygui
-
-    // Note .CHANGELOG.md is just a temporary file used on appveyor, and it contains the following text on GitHub:
-    //
-    // This file will be updated as part of the ChocolateyGUI build process.
-    //
-    // If you want to see the current release notes, please check [here](https://github.com/chocolatey/ChocolateyGUI/releases)
 });
 
 Task("Create-Release-Notes")

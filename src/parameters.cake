@@ -112,7 +112,6 @@ public class BuildParameters
         }
     }
 
-    // TODO: Document why we do not use CleanDirectories/CleanDirectory alias, because it does not remove the folder
     public void ClearArtifacts()
     {
         ClearTempArtifacts();

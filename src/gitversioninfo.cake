@@ -1,23 +1,3 @@
-// We cannot fetch because for some (unknown) reason libgit2sharp 0.26.1 throws
-//  LibGit2Sharp.LibGit2SharpException: UsernamePasswordCredentials contains a null Username or Password.
-//    at LibGit2Sharp.Core.Ensure.HandleError(Int32 result)
-//    at LibGit2Sharp.Core.Ensure.ZeroResult(Int32 result)
-//    at LibGit2Sharp.Core.Proxy.git_remote_fetch(RemoteHandle remote, IEnumerable`1 refSpecs, GitFetchOptions fetchOptions, String logMessage)
-//    at LibGit2Sharp.Commands.Fetch(Repository repository, String remote, IEnumerable`1 refspecs, FetchOptions options, String logMessage)
-//    at GitVersion.Helpers.GitRepositoryHelper.Fetch(ILog log, AuthenticationInfo authentication, Remote remote, Repository repo)
-//    at GitVersion.Helpers.GitRepositoryHelper.NormalizeGitDirectory(ILog log, IEnvironment environment, String gitDirectory, AuthenticationInfo authentication, Boolean noFetch, String currentBranch, Boolean isDynamicRepository)
-//    at GitVersion.GitPreparer.NormalizeGitDirectory(AuthenticationInfo auth, String targetBranch, String gitDirectory, Boolean isDynamicRepository)
-//    at GitVersion.GitPreparer.PrepareInternal(Boolean normalizeGitDirectory, String currentBranch, Boolean shouldCleanUpRemotes)
-//    at GitVersion.GitPreparer.Prepare()
-//    at GitVersion.GitVersionExecutor.VerifyArgumentsAndRun(Arguments arguments)
-// Options
-//    * Nofetch switch
-//    * NoNormalize switch
-//    * use password instead of access token (BUT this doesn't work with 2FA!!!)
-//    * staying on gitVersion 5.0.1 (uses libgit2sharp 0.26.0)
-// TODO: Uncomment this
-//#tool nuget:?package=GitVersion.CommandLine&version=5.1.0
-
 public class GitVersionInfo
 {
     private readonly ICakeContext _context;
@@ -61,7 +41,7 @@ public class GitVersionInfo
 
     public string CakeVersion { get; private set; }
 
-    public string GitVersionToolInfo { get; private set; }
+    public string GitVersionVersion { get; private set; }
 
     public string BuildVersion { get; private set; }
 
@@ -114,7 +94,7 @@ public class GitVersionInfo
 
         if (gitHubRepository.IsGitRepository)
         {
-            // TODO: GitVersion running on Unix (.NET Core)
+            // TODO: This can be removed after migration to gitversion.tool (.NET Core tool)
             if (context.IsRunningOnWindows())
             {
                 context.Information("Calculating Semantic Version...");
@@ -127,16 +107,18 @@ public class GitVersionInfo
                 if (false == string.IsNullOrEmpty(gitHubCredentials.UserName)) {
                     context.Information("GitHub UserName '{0}' was found.", gitHubCredentials.UserName);
 
+                    // Always prefer token based authentication
                     if (false == string.IsNullOrEmpty(gitHubCredentials.Token))
                     {
                         context.Information("Environment variable GITHUB_ACCESS_TOKEN was found.");
                         environmentVariables = new Dictionary<string, string>
                         {
+                            // TODO: Try passing username/token
                             { "GITVERSION_REMOTE_USERNAME", gitHubCredentials.Token },
                             { "GITVERSION_REMOTE_PASSWORD", string.Empty }
                         };
                     }
-                    else if (false == string.IsNullOrEmpty(gitHubCredentials.Password ))
+                    else if (false == string.IsNullOrEmpty(gitHubCredentials.Password))
                     {
                         context.Information("Environment variable GITHUB_PASSWORD was found.");
                         environmentVariables = new Dictionary<string, string>
@@ -146,7 +128,7 @@ public class GitVersionInfo
                         };
                     }
                     else {
-                        context.Information("Environment variables GITHUB_PASSWORD or GITHUB_ACCESS_TOKEN cannot be found.");
+                        context.Debug("Environment variables GITHUB_PASSWORD or GITHUB_ACCESS_TOKEN cannot be found -- GITVERSION_REMOTE_USERNAME/GITVERSION_REMOTE_PASSWORD is not defined.");
                     }
                 }
                 else {
@@ -221,17 +203,7 @@ public class GitVersionInfo
             infoVer = string.Concat(semVer, "+GitVersion.Was.Not.Called");
         }
 
-        // NOTE:
-        // GitVersion.exe can be in path (e.g. choco install)
-        // dotnet-gitversion is probably .NET Core cli tool, or is it dotnet-tool on *nix???
-        // dotnet-gitversion.exe is created by Cake.DotNetTool.Module (local/global .NET Core 3.x tool)
-        string gitVersionToolInfo =
-            // NOTE: AppVeyor has GitVersion.exe installed globally, we need to
-            //       make GitVersion.exe the last executable to search for
-            new ToolRunner(context, new [] { "dotnet-gitversion", "dotnet-gitversion.exe", "GitVersion.exe" })
-                .SafeCommand("/version")
-                .Split(new [] { '\r', '\n' })
-                .FirstOrDefault();
+        string gitVersionToolInfo = GetGitVersionVersion();
 
         string cakeAssemblyVersion = typeof(ICakeContext).Assembly.GetName().Version.ToString();
         string cakeVersion = StringUtils.TrimEnd(cakeAssemblyVersion, ".0");
@@ -251,6 +223,26 @@ public class GitVersionInfo
             }
         }
 
+        // local function
+        string GetGitVersionVersion() {
+            string gitVersionToolInfo =
+                // NOTE: AppVeyor has GitVersion.exe installed globally, we need to
+                //       make GitVersion.exe the last executable to search for
+                new ToolRunner(context, new [] { "dotnet-gitversion", "dotnet-gitversion.exe", "GitVersion.exe" })
+                    .SafeCommand("/version")
+                    .Split(new [] { '\r', '\n' })
+                    .FirstOrDefault();
+
+            if (string.IsNullOrEmpty(gitVersionToolInfo))
+                return string.Empty;
+
+            int pos = gitVersionToolInfo.IndexOf('+');
+            if (pos >= 0)
+                return gitVersionToolInfo.Substring(0, pos); // remove metadata
+            else
+                return gitVersionToolInfo; // no metadata found
+        }
+
         return new GitVersionInfo(context)
         {
             MajorMinorPatch = majorMinorPatch,
@@ -260,7 +252,7 @@ public class GitVersionInfo
             AssemblyInformationalVersion = infoVer,
             SemVer = semVer,
             CakeVersion = cakeVersion,
-            GitVersionToolInfo = gitVersionToolInfo,
+            GitVersionVersion = GetGitVersionVersion(),
             BuildVersion = buildVersion
         };
     }

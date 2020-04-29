@@ -91,10 +91,5 @@ fi
 if $SHOW_VERSION; then
     exec mono "$CAKE_EXE" -version
 else
-# C# v6 features (e.g. string interpolation) are not supported without '-experimental' flag
-#   See https://github.com/cake-build/cake/issues/293
-#   See https://github.com/cake-build/cake/issues/326
-# TODO: Is --experimental necessary on mono?
-    #exec mono "$CAKE_EXE" $SCRIPT --experimental --verbosity=$VERBOSITY --configuration=$CONFIGURATION --target=$TARGET $DRYRUN "${SCRIPT_ARGUMENTS[@]}"
     exec mono "$CAKE_EXE" $SCRIPT --verbosity=$VERBOSITY --configuration=$CONFIGURATION --target=$TARGET $DRYRUN "${SCRIPT_ARGUMENTS[@]}"
 fi

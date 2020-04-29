@@ -64,7 +64,6 @@ public class ToolFiles
     private readonly ICakeContext _context;
 
     public FilePath NuGet { get; private set; }
-    // TODO: Git
 
     public ToolFiles(
         ICakeContext  context,
@@ -74,7 +73,9 @@ public class ToolFiles
     {
         _context = context;
 
-        NuGet = dirs.BuildTools.CombineWithFilePath("nuget.exe"); // TODO: Cross-plat???
+        // Nuget is not cross-platform, because it does not run on .NET Core
+        // We have to use .NET Framework on windows, and mono on mac/linux.
+        NuGet = dirs.BuildTools.CombineWithFilePath("nuget.exe");
     }
 
     public void PrintToLog()
