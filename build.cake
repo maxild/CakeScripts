@@ -7,7 +7,6 @@
 #load "src/gitversioninfo.cake"
 #load "src/parameters.cake"
 #load "src/paths.cake"
-#load "src/projectjson.cake"
 #load "src/runhelpers.cake"
 #load "src/settings.cake"
 #load "src/toolrunner.cake"
@@ -137,9 +136,6 @@ Task("Package")
     .Does(() =>
 {
     var nuspecFile = GetFiles(parameters.Paths.Directories.Nuspec + "/*.nuspec").Single();
-
-    // TODO: Addin the release notes in the nuspec
-    // ReleaseNotes = parameters.ReleaseNotes.Notes.ToArray(),
 
     NuGetPack(nuspecFile, new NuGetPackSettings {
         Version = parameters.VersionInfo.NuGetVersion,

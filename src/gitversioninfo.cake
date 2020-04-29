@@ -94,112 +94,101 @@ public class GitVersionInfo
 
         if (gitHubRepository.IsGitRepository)
         {
-            // TODO: This can be removed after migration to gitversion.tool (.NET Core tool)
-            if (context.IsRunningOnWindows())
-            {
-                context.Information("Calculating Semantic Version...");
+            context.Information("Calculating Semantic Version...");
 
-                // In case the GitHub repository requires authentication (i.e
-                // is a private repository) we configure GitHub credentials
-                // such that libgit2sharp can be configured via env vars
-                IDictionary<string, string> environmentVariables = null;
+            // In case the GitHub repository requires authentication (i.e
+            // is a private repository) we configure GitHub credentials
+            // such that libgit2sharp can be configured via env vars
+            IDictionary<string, string> environmentVariables = null;
 
-                if (false == string.IsNullOrEmpty(gitHubCredentials.UserName)) {
-                    context.Information("GitHub UserName '{0}' was found.", gitHubCredentials.UserName);
+            if (false == string.IsNullOrEmpty(gitHubCredentials.UserName)) {
+                context.Information("GitHub UserName '{0}' was found.", gitHubCredentials.UserName);
 
-                    // Always prefer token based authentication
-                    if (false == string.IsNullOrEmpty(gitHubCredentials.Token))
+                // Always prefer token based authentication
+                if (false == string.IsNullOrEmpty(gitHubCredentials.Token))
+                {
+                    context.Information("Environment variable GITHUB_ACCESS_TOKEN was found.");
+                    environmentVariables = new Dictionary<string, string>
                     {
-                        context.Information("Environment variable GITHUB_ACCESS_TOKEN was found.");
-                        environmentVariables = new Dictionary<string, string>
-                        {
-                            // TODO: Try passing username/token
-                            { "GITVERSION_REMOTE_USERNAME", gitHubCredentials.Token },
-                            { "GITVERSION_REMOTE_PASSWORD", string.Empty }
-                        };
-                    }
-                    else if (false == string.IsNullOrEmpty(gitHubCredentials.Password))
+                        // TODO: Try passing username/token
+                        { "GITVERSION_REMOTE_USERNAME", gitHubCredentials.Token },
+                        { "GITVERSION_REMOTE_PASSWORD", string.Empty }
+                    };
+                }
+                else if (false == string.IsNullOrEmpty(gitHubCredentials.Password))
+                {
+                    context.Information("Environment variable GITHUB_PASSWORD was found.");
+                    environmentVariables = new Dictionary<string, string>
                     {
-                        context.Information("Environment variable GITHUB_PASSWORD was found.");
-                        environmentVariables = new Dictionary<string, string>
-                        {
-                            { "GITVERSION_REMOTE_USERNAME", gitHubCredentials.UserName },
-                            { "GITVERSION_REMOTE_PASSWORD", gitHubCredentials.Password }
-                        };
-                    }
-                    else {
-                        context.Debug("Environment variables GITHUB_PASSWORD or GITHUB_ACCESS_TOKEN cannot be found -- GITVERSION_REMOTE_USERNAME/GITVERSION_REMOTE_PASSWORD is not defined.");
-                    }
+                        { "GITVERSION_REMOTE_USERNAME", gitHubCredentials.UserName },
+                        { "GITVERSION_REMOTE_PASSWORD", gitHubCredentials.Password }
+                    };
                 }
                 else {
-                    throw new InvalidOperationException("UNEXPECTED: No GitHub UserName can be found.");
+                    context.Debug("Environment variables GITHUB_PASSWORD or GITHUB_ACCESS_TOKEN cannot be found -- GITVERSION_REMOTE_USERNAME/GITVERSION_REMOTE_PASSWORD is not defined.");
                 }
+            }
+            else {
+                throw new InvalidOperationException("UNEXPECTED: No GitHub UserName can be found.");
+            }
 
-                if (false == buildSystem.IsLocalBuild)
+            if (false == buildSystem.IsLocalBuild)
+            {
+                // Running on AppVeyor, we have to patch private repos
+                //   GitVersion (i.e. libgit2) doesn't support SSH, so to avoid 'Unsupported URL protocol'
+                //   when GitVersion fetches from the remote, we have to convert to using HTTPS
+                //   See http://help.appveyor.com/discussions/kb/17-getting-gitversion-to-work-with-private-bitbucketgithub-repositories
+
+                if (false == gitHubRepository.HasHttpsUrl)
                 {
-                    // Running on AppVeyor, we have to patch private repos
-                    //   GitVersion (i.e. libgit2) doesn't support SSH, so to avoid 'Unsupported URL protocol'
-                    //   when GitVersion fetches from the remote, we have to convert to using HTTPS
-                    //   See http://help.appveyor.com/discussions/kb/17-getting-gitversion-to-work-with-private-bitbucketgithub-repositories
-
-                    if (false == gitHubRepository.HasHttpsUrl)
-                    {
-                        new ToolRunner(context, new [] {"git.exe", "git"})
-                            .Command(string.Format("remote set-url origin {0}",
-                                gitHubRepository.HttpsUrl));
-                    }
-
-                    // Running on AppVeyor, we have to patch/setup local tracking branches
-                    context.GitVersion(new GitVersionSettings
-                    {
-                        // NOTE: AppVeyor has GitVersion.exe installed globally, we need to
-                        //       make GitVersion.exe the last executable to search for
-                        ToolPath = context.Tools.Resolve("dotnet-gitversion") ??
-                                   context.Tools.Resolve("dotnet-gitversion.exe") ??
-                                   context.Tools.Resolve("GitVersion.exe"),
-                        OutputType = GitVersionOutput.BuildServer,
-                        EnvironmentVariables = environmentVariables,
-                        //NoFetch = true,
-                        //ArgumentCustomization = args => args.Append("/nonormalize")
-                    });
-
-                    majorMinorPatch = EnvironmentVariable("GitVersion_MajorMinorPatch");
-                    pkgVersion = EnvironmentVariable("GitVersion_LegacySemVerPadded");
-                    semVer = EnvironmentVariable("GitVersion_SemVer");
-                    infoVer = EnvironmentVariable("GitVersion_InformationalVersion");
+                    new ToolRunner(context, new [] {"git.exe", "git"})
+                        .Command(string.Format("remote set-url origin {0}",
+                            gitHubRepository.HttpsUrl));
                 }
 
-                var assertedVersions = context.GitVersion(new GitVersionSettings
+                // Running on AppVeyor, we have to patch/setup local tracking branches
+                context.GitVersion(new GitVersionSettings
                 {
                     // NOTE: AppVeyor has GitVersion.exe installed globally, we need to
                     //       make GitVersion.exe the last executable to search for
                     ToolPath = context.Tools.Resolve("dotnet-gitversion") ??
-                               context.Tools.Resolve("dotnet-gitversion.exe") ??
-                               context.Tools.Resolve("GitVersion.exe"),
-                    OutputType = GitVersionOutput.Json,
+                                context.Tools.Resolve("dotnet-gitversion.exe") ??
+                                context.Tools.Resolve("GitVersion.exe"),
+                    OutputType = GitVersionOutput.BuildServer,
                     EnvironmentVariables = environmentVariables,
+                    //NoFetch = true,
+                    //ArgumentCustomization = args => args.Append("/nonormalize")
                 });
 
-                majorMinorPatch = assertedVersions.MajorMinorPatch;
-                pkgVersion = assertedVersions.LegacySemVerPadded;
-                semVer = assertedVersions.SemVer;
-                infoVer = assertedVersions.InformationalVersion;
+                majorMinorPatch = EnvironmentVariable("GitVersion_MajorMinorPatch");
+                pkgVersion = EnvironmentVariable("GitVersion_LegacySemVerPadded");
+                semVer = EnvironmentVariable("GitVersion_SemVer");
+                infoVer = EnvironmentVariable("GitVersion_InformationalVersion");
+            }
 
-                context.Information("Calculated Semantic Version: {0}", semVer);
-            }
-            else
+            var assertedVersions = context.GitVersion(new GitVersionSettings
             {
-                majorMinorPatch = "0.0.0";
-                pkgVersion = string.Concat(majorMinorPatch, "-not-gitrepo");
-                semVer = string.Concat(majorMinorPatch, "-not.gitrepo");
-                infoVer = string.Concat(semVer, "+GitVersion.Was.Not.Called");
-            }
+                // NOTE: AppVeyor has GitVersion.exe installed globally, we need to
+                //       make GitVersion.exe the last executable to search for
+                ToolPath = context.Tools.Resolve("dotnet-gitversion") ??
+                            context.Tools.Resolve("dotnet-gitversion.exe") ??
+                            context.Tools.Resolve("GitVersion.exe"),
+                OutputType = GitVersionOutput.Json,
+                EnvironmentVariables = environmentVariables,
+            });
+
+            majorMinorPatch = assertedVersions.MajorMinorPatch;
+            pkgVersion = assertedVersions.LegacySemVerPadded;
+            semVer = assertedVersions.SemVer;
+            infoVer = assertedVersions.InformationalVersion;
+
+            context.Information("Calculated Semantic Version: {0}", semVer);
         }
         else
         {
             majorMinorPatch = "0.0.0";
-            pkgVersion = string.Concat(majorMinorPatch, "-not-windows");
-            semVer = string.Concat(majorMinorPatch, "-not.windows");
+            pkgVersion = string.Concat(majorMinorPatch, "-not-gitrepo");
+            semVer = string.Concat(majorMinorPatch, "-not.gitrepo");
             infoVer = string.Concat(semVer, "+GitVersion.Was.Not.Called");
         }
 
