@@ -58,71 +58,51 @@ if ((Test-Path $PSScriptRoot) -and (-not (Test-Path $TOOLS_DIR))) {
 }
 
 ###########################################################################
-# INSTALL CAKE
+# INSTALL .NET Core 3.x tools
 ###########################################################################
 
-# Make sure Cake has been installed.
-[string] $CakeExePath = ''
-[string] $CakeInstalledVersion = Get-Command dotnet-cake -ErrorAction SilentlyContinue | ForEach-Object { &$_.Source --version }
+# To see list of packageid, version and commands
+#      dotnet tool list --tool-path ./tools
+Function Install-NetCoreTool {
+    param
+    (
+        [string]$PackageId,
+        [string]$ToolCommandName,
+        [string]$Version
+    )
 
-if ($CakeInstalledVersion -eq $CakeVersion) {
-    # Cake found locally
-    $CakeExePath = (Get-Command dotnet-cake).Source
-}
-else {
-    $CakePath = Join-Path $TOOLS_DIR '.store' | Join-Path -ChildPath 'cake.tool' | Join-Path -ChildPath $CakeVersion
-    $CakePathExists = Test-Path -Path $CakePath -PathType Container
-
-    $CakeExePath = (Get-ChildItem -Path $TOOLS_DIR -Filter "dotnet-cake*" -File | ForEach-Object FullName | Select-Object -First 1)
-    $CakeExePathExists = (![string]::IsNullOrEmpty($CakeExePath)) -and (Test-Path $CakeExePath -PathType Leaf)
-
-    if ((!$CakePathExists) -or (!$CakeExePathExists)) {
-
-        if ($CakeExePathExists) {
-            & dotnet tool uninstall --tool-path $TOOLS_DIR Cake.Tool
-        }
-
-        & dotnet tool install --tool-path $TOOLS_DIR --version $CakeVersion --configfile NuGet.public.config Cake.Tool
-        if ($LASTEXITCODE -ne 0) {
-            exit $LASTEXITCODE
-        }
-
-        $CakeExePath = (Get-ChildItem -Path $TOOLS_DIR -Filter "dotnet-cake*" -File | ForEach-Object FullName | Select-Object -First 1)
+    if (![string]::IsNullOrEmpty($Version)) {
+        $ToolPath = Join-Path $TOOLS_DIR '.store' | Join-Path -ChildPath $PackageId.ToLower() | Join-Path -ChildPath $Version
+        $ToolPathExists = Test-Path -Path $ToolPath -PathType Container
     }
-}
-
-###########################################################################
-# INSTALL GITVERSION
-###########################################################################
-
-$GitVersionToolPath = Join-Path $TOOLS_DIR '.store' | Join-Path -ChildPath 'gitversion.tool'
-
-# ./.store/gitversion.tool/x.y.z that indicate that the gitversion tool have been installed (locally) into tools folder
-if (![string]::IsNullOrEmpty($GitVersionVersion)) {
-    $GitVersionPath = Join-Path $GitVersionToolPath $GitVersionVersion
-    $GitVersionPathExists = Test-Path -Path $GitVersionPath -PathType Container
-}
-else {
-    $GitVersionPathExists = $false
-}
-
-# ./dotnet-gitversion.exe that can be resolved as a tool by cake
-$GitVersionExePath = (Get-ChildItem -Path $TOOLS_DIR -Filter "dotnet-gitversion*" -File | ForEach-Object FullName | Select-Object -First 1)
-$GitVersionExePathExists = (![string]::IsNullOrEmpty($GitVersionExePath)) -and (Test-Path $GitVersionExePath -PathType Leaf)
-
-if ((!$GitVersionPathExists) -or (!$GitVersionExePathExists)) {
-
-    if ($GitVersionExePathExists) {
-        & dotnet tool uninstall --tool-path $TOOLS_DIR GitVersion.Tool
+    else {
+        $ToolPathExists = $false
     }
 
-    if (![string]::IsNullOrEmpty($GitVersionVersion)) {
-        & dotnet tool install --tool-path $TOOLS_DIR --version $GitVersionVersion --configfile NuGet.public.config GitVersion.Tool
-        if ($LASTEXITCODE -ne 0) {
-            exit $LASTEXITCODE
+    $ExePath = (Get-ChildItem -Path $TOOLS_DIR -Filter "${ToolCommandName}*" -File | ForEach-Object FullName | Select-Object -First 1)
+    $ExePathExists = (![string]::IsNullOrEmpty($ExePath)) -and (Test-Path $ExePath -PathType Leaf)
+
+    if ((!$ToolPathExists) -or (!$ExePathExists)) {
+
+        if ($ExePathExists) {
+            & dotnet tool uninstall --tool-path $TOOLS_DIR GitReleaseManager.Tool
         }
+
+        if (![string]::IsNullOrEmpty($Version)) {
+            & dotnet tool install --tool-path $TOOLS_DIR --version $Version --configfile NuGet.public.config $PackageId
+            if ($LASTEXITCODE -ne 0) {
+                exit $LASTEXITCODE
+            }
+        }
+
+        $ExePath = (Get-ChildItem -Path $TOOLS_DIR -Filter "${ToolCommandName}*" -File | ForEach-Object FullName | Select-Object -First 1)
     }
+
+    return $ExePath
 }
+
+[string] $CakeExePath = Install-NetCoreTool -PackageId 'Cake.Tool' -ToolCommandName 'dotnet-cake' -Version $CakeVersion
+Install-NetCoreTool -PackageId 'GitVersion.Tool' -ToolCommandName 'dotnet-gitversion' -Version $GitVersionVersion | Out-Null
 
 ###########################################################################
 # RUN BUILD SCRIPT
