@@ -6,28 +6,19 @@ os:
 sudo: required
 dist: trusty
 
-# See also https://github.com/dotnet/core/blob/master/Documentation/prereqs.md
-addons:
-  apt:
-    packages:
-    - gettext
-    - libcurl4-openssl-dev
-    - libicu-dev
-    - libssl-dev
-    - libunwind8
-    - zlib1g
-
 mono:
-  - latest
+  - 5.12.0
+  - 5.20.1
 
-osx_image: xcode7.3
+dotnet: 3.1.101
 
-install:
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew update; fi
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install openssl; fi
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then ln -s /usr/local/opt/openssl/lib/libcrypto.1.0.0.dylib /usr/local/lib/; fi
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then ln -s /usr/local/opt/openssl/lib/libssl.1.0.0.dylib /usr/local/lib/; fi
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew list; fi
+# OS X 10.12
+osx_image: xcode11.2
+
+before_install:
+  - git fetch --unshallow # Travis always does a shallow clone, but GitVersion needs the full history including branches and tags
+  - git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
+  - git fetch origin
 
 script:
-  - ./build.sh --target Travis --verbosity diagnostic
+  - ./build.sh --target=Travis --verbosity=diagnostic
