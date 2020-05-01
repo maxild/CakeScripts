@@ -34,7 +34,14 @@ Param(
     [string[]]$ScriptArgs
 )
 
-$PSScriptRoot = split-path -parent $MyInvocation.MyCommand.Definition;
+$PSScriptRoot = split-path -parent $MyInvocation.MyCommand.Definition
+$TOOLS_DIR = Join-Path $PSScriptRoot "tools"
+
+# Make sure tools folder exists
+if ((Test-Path $PSScriptRoot) -and (-not (Test-Path $TOOLS_DIR))) {
+    Write-Verbose -Message "Creating tools directory..."
+    New-Item -Path $TOOLS_DIR -Type directory | out-null
+}
 
 ###########################################################################
 # LOAD versions from build.config
@@ -66,6 +73,10 @@ if ([string]::IsNullOrEmpty($GitVersionVersion)) {
     'Failed to parse GitVersion version'
     exit 1
 }
+
+# This will force the use of TLS 1.2 (you can also make it use 1.1 if you want for some reason).
+# To avoid the exception: "The underlying connection was closed: An unexpected error occurred on a send."
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 ###########################################################################
 # Install .NET Core SDK
@@ -127,12 +138,6 @@ if ($FoundDotNetSdkVersion -ne $DotNetSdkVersion) {
 ###########################################################################
 # INSTALL .NET Core 3.x tools
 ###########################################################################
-
-$TOOLS_DIR = Join-Path $PSScriptRoot "tools"
-if ((Test-Path $PSScriptRoot) -and (-not (Test-Path $TOOLS_DIR))) {
-    Write-Verbose -Message "Creating tools directory..."
-    New-Item -Path $TOOLS_DIR -Type directory | out-null
-}
 
 # To see list of packageid, version and commands
 #      dotnet tool list --tool-path ./tools
