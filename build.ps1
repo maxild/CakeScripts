@@ -40,15 +40,23 @@ $PSScriptRoot = split-path -parent $MyInvocation.MyCommand.Definition;
 # LOAD versions from build.config
 ###########################################################################
 
+[string] $DotNetSdkVersion = ''
 [string] $CakeVersion = ''
 [string] $GitVersionVersion = ''
 foreach ($line in Get-Content (Join-Path $PSScriptRoot 'build.config')) {
-    if ($line -like 'CAKE_VERSION=*') {
+    if ($line -like 'DOTNET_VERSION=*') {
+        $DotNetSdkVersion = $line.SubString(15)
+    }
+    elseif ($line -like 'CAKE_VERSION=*') {
         $CakeVersion = $line.SubString(13)
     }
     elseif ($line -like 'GITVERSION_VERSION=*') {
         $GitVersionVersion = $line.SubString(19)
     }
+}
+if ([string]::IsNullOrEmpty($DotNetSdkVersion)) {
+    'Failed to parse .NET Core SDK version'
+    exit 1
 }
 if ([string]::IsNullOrEmpty($CakeVersion)) {
     'Failed to parse Cake version'
@@ -57,6 +65,63 @@ if ([string]::IsNullOrEmpty($CakeVersion)) {
 if ([string]::IsNullOrEmpty($GitVersionVersion)) {
     'Failed to parse GitVersion version'
     exit 1
+}
+
+###########################################################################
+# Install .NET Core SDK
+###########################################################################
+
+$env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE = 1 # Caching packages on a temporary build machine is a waste of time.
+$env:DOTNET_CLI_TELEMETRY_OPTOUT = 1       # opt out of telemetry
+$env:DOTNET_ROLL_FORWARD_ON_NO_CANDIDATE_FX = 2
+
+$DotNetChannel = 'LTS'
+
+Function Remove-PathVariable([string]$VariableToRemove) {
+    $path = [Environment]::GetEnvironmentVariable("PATH", "User")
+    if ($path -ne $null) {
+        $newItems = $path.Split(';', [StringSplitOptions]::RemoveEmptyEntries) | Where-Object { "$($_)" -inotlike $VariableToRemove }
+        [Environment]::SetEnvironmentVariable("PATH", [System.String]::Join(';', $newItems), "User")
+    }
+
+    $path = [Environment]::GetEnvironmentVariable("PATH", "Process")
+    if ($path -ne $null) {
+        $newItems = $path.Split(';', [StringSplitOptions]::RemoveEmptyEntries) | Where-Object { "$($_)" -inotlike $VariableToRemove }
+        [Environment]::SetEnvironmentVariable("PATH", [System.String]::Join(';', $newItems), "Process")
+    }
+}
+
+$FoundDotNetSdkVersion = $null
+if (Get-Command dotnet -ErrorAction SilentlyContinue) {
+    # dotnet --version will use version found in global.json, but the SDK will error if the
+    # global.json version is not found on the machine.
+    $FoundDotNetSdkVersion = & dotnet --version 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        # Extract the first line of the message without making powershell write any error messages
+        Write-Host ($FoundDotNetSdkVersion | ForEach-Object { "$_" } | select-object -first 1)
+        Write-Host "That is not problem, we will install the SDK version below."
+        $FoundDotNetSdkVersion = "" # Force installation of .NET Core SDK via dotnet-install script
+    }
+    else {
+        Write-Host ".NET Core SDK version $FoundDotNetSdkVersion found."
+    }
+}
+
+if ($FoundDotNetSdkVersion -ne $DotNetSdkVersion) {
+    Write-Verbose -Message "Installing .NET Core SDK version $DotNetSdkVersion ..."
+
+    $InstallPath = Join-Path $PSScriptRoot ".dotnet"
+    if (-not (Test-Path $InstallPath)) {
+        mkdir -Force $InstallPath | Out-Null
+    }
+
+    (New-Object System.Net.WebClient).DownloadFile("https://dot.net/v1/dotnet-install.ps1", "$InstallPath\dotnet-install.ps1")
+
+    & $InstallPath\dotnet-install.ps1 -Channel $DotNetChannel -Version $DotNetSdkVersion -InstallDir $InstallPath -NoPath
+
+    Remove-PathVariable "$InstallPath"
+    $env:PATH = "$InstallPath;$env:PATH"
+    $env:DOTNET_ROOT = $InstallPath
 }
 
 ###########################################################################

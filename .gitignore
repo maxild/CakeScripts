@@ -1,3 +1,8 @@
+.vs/
+.ionide/
+.idea/
+.dotnet/
+
 tools/*
 !tools/packages.config
 
