@@ -2,6 +2,11 @@
 
 SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
+TOOLS_DIR="$SCRIPT_DIR/tools"
+if [ ! -d "$TOOLS_DIR" ]; then
+  mkdir "$TOOLS_DIR"
+fi
+
 ###########################################################################
 # LOAD versions from build.config
 ###########################################################################
@@ -35,8 +40,10 @@ if [ "$GITVERSION_VERSION" = "" ]; then
 fi
 
 ###########################################################################
-# INSTALL .NET CORE CLI
+# INSTALL .NET Core SDK
 ###########################################################################
+
+DOTNET_CHANNEL='LTS'
 
 export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
@@ -59,7 +66,7 @@ if [[ "$DOTNET_VERSION" != "$DOTNET_INSTALLED_VERSION" ]]; then
     mkdir "$SCRIPT_DIR/.dotnet"
   fi
   curl -Lsfo "$SCRIPT_DIR/.dotnet/dotnet-install.sh" https://dot.net/v1/dotnet-install.sh > /dev/null 2>&1
-  bash "$SCRIPT_DIR/.dotnet/dotnet-install.sh" --version $DOTNET_VERSION --install-dir .dotnet --no-path > /dev/null 2>&1
+  bash "$SCRIPT_DIR/.dotnet/dotnet-install.sh" --version $DOTNET_VERSION --channel $DOTNET_CHANNEL --install-dir .dotnet --no-path > /dev/null 2>&1
   # Note: This PATH/DOTNET_ROOT will be visible only when sourcing script.
   # Note: But on travis CI or other *nix build machines the PATH does not have
   #       to be visible on the commandline after the build
@@ -71,10 +78,6 @@ fi
 # INSTALL .NET Core 3.x tools
 ###########################################################################
 
-TOOLS_DIR="$SCRIPT_DIR/tools"
-if [ ! -d "$TOOLS_DIR" ]; then
-  mkdir "$TOOLS_DIR"
-fi
 
 function install_tool () {
   local packageId=$1
