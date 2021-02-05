@@ -10,7 +10,8 @@ init:
   - git config --global core.autocrlf input
 
 build_script:
-  - ps: .\build.ps1 --target=AppVeyor --verbosity=diagnostic
+  # NOTE: We use powershell argument parsing (i.e '--target=AppVeyor --verboity=diagnostic' does not work)
+  - ps: .\build.ps1 -target AppVeyor -verbosity diagnostic
 
 test: off
 
