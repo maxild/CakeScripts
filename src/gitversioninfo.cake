@@ -205,11 +205,7 @@ public class GitVersionInfo
             string buildNumber = EnvironmentVariable("APPVEYOR_BUILD_NUMBER");
             // buildVersion must be unique, otherwise request to appveyor fails
             buildVersion = $"{semVer}.build.{buildNumber}"; // we could use fullSemVer, but semVer seems OK
-            var statusCode = UpdateAppveyorBuildVersion(apiUrl, buildVersion);
-            if (statusCode != System.Net.HttpStatusCode.OK)
-            {
-                context.Warning("UpdateAppveyorBuildVersion: Request failed. Received status {0}", statusCode);
-            }
+            buildSystem.AppVeyor.UpdateBuildVersion(buildVersion);
         }
 
         // local function
@@ -244,27 +240,6 @@ public class GitVersionInfo
             GitVersionVersion = GetGitVersionVersion(),
             BuildVersion = buildVersion
         };
-    }
-
-    private static System.Net.HttpStatusCode UpdateAppveyorBuildVersion(string apiUrl, string buildVersion)
-    {
-        var request = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(apiUrl);
-        request.Method = "PUT";
-
-        var data = $"{{ \"version\": \"{buildVersion}\" }}";
-        var bytes = System.Text.Encoding.UTF8.GetBytes(data);
-        request.ContentLength = bytes.Length;
-        request.ContentType = "application/json";
-
-        using (var writeStream = request.GetRequestStream())
-        {
-            writeStream.Write(bytes, 0, bytes.Length);
-        }
-
-        using (var response = (System.Net.HttpWebResponse)request.GetResponse())
-        {
-            return response.StatusCode;
-        }
     }
 }
 

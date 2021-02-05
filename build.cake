@@ -160,7 +160,7 @@ Task("Publish")
 Task("Create-Release-Notes")
     .Does(() =>
 {
-    GitReleaseManagerCreate(parameters.GitHub.UserName, parameters.GitHub.Password,
+    GitReleaseManagerCreate(parameters.GitHub.GetRequiredToken(),
                             parameters.GitHub.RepositoryOwner, parameters.GitHub.RepositoryName,
         new GitReleaseManagerCreateSettings
         {
@@ -189,7 +189,6 @@ Task("Upload-AppVeyor-Artifacts")
 {
     var nupkgFile = GetFiles(parameters.Paths.Directories.Artifacts + "/*.nupkg").Single();
     AppVeyor.UploadArtifact(nupkgFile);
-
 });
 
 Task("Generate-CakeScripts-Version-Source-File")
