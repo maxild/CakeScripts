@@ -1,3 +1,5 @@
+image: Visual Studio 2019
+
 environment:
   github_access_token:
     secure: zQQEhxL1AYm9ruLnKXrKaQjH7XHc43PtnVuvcHQuPGmsAplXMvHmo+wCieGTyP9j
@@ -8,7 +10,7 @@ init:
   - git config --global core.autocrlf input
 
 build_script:
-  - ps: .\build.ps1 -target AppVeyor -verbosity diagnostic
+  - ps: .\build.ps1 --target=AppVeyor --verbosity=diagnostic
 
 test: off
 
