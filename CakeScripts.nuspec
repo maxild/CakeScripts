@@ -11,5 +11,10 @@
   <files>
     <!-- target can be either 'content' or 'tools' ('lib' does not make sense) -->
     <file src="*.cake" target="content" />
+    <!--
+        version.txt will tell bootstrapper scripts (build.sh and build.ps1),
+        if another version should be downbloaded
+    -->
+    <file src="version.txt" target="content" />
   </files>
 </package>

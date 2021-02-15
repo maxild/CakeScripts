@@ -96,6 +96,7 @@ Task("Clean").Does(() => parameters.ClearArtifacts());
 Task("Build")
     .IsDependentOn("Clean")
     .IsDependentOn("Generate-CakeScripts-Version-Source-File")
+    .IsDependentOn("Generate-Version-Txt-File")
     .Does(() =>
 {
     EnsureDirectoryExists(parameters.Paths.Directories.TempArtifacts);
@@ -226,6 +227,14 @@ public static class CakeScripts
 
     var path = parameters.Paths.Directories.Src.CombineWithFilePath("main.cake");
     System.IO.File.WriteAllText(path.FullPath, contents, Encoding.UTF8);
+});
+
+Task("Generate-Version-Txt-File")
+    .Does(() =>
+{
+    EnsureDirectoryExists(parameters.Paths.Directories.TempArtifacts);
+    var path = parameters.Paths.Directories.TempArtifacts.CombineWithFilePath("version.txt");
+    System.IO.File.WriteAllText(path.FullPath, parameters.VersionInfo.NuGetVersion, Encoding.UTF8);
 });
 
 ///////////////////////////////////////////////////////////////////////////////
