@@ -234,7 +234,8 @@ Task("Generate-Version-Txt-File")
 {
     EnsureDirectoryExists(parameters.Paths.Directories.TempArtifacts);
     var path = parameters.Paths.Directories.TempArtifacts.CombineWithFilePath("version.txt");
-    System.IO.File.WriteAllText(path.FullPath, parameters.VersionInfo.NuGetVersion, Encoding.UTF8);
+    // Ascii encoding because we want no BOM
+    System.IO.File.WriteAllText(path.FullPath, parameters.VersionInfo.NuGetVersion, Encoding.ASCII);
 });
 
 ///////////////////////////////////////////////////////////////////////////////
